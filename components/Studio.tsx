@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SampleKey } from "@/lib/image";
-import { SAMPLE_FIELDS, loadImageToField, type ImageField } from "@/lib/image";
+import { loadImageToField, resolveSample, sampleRings, type ImageField } from "@/lib/image";
 import {
   bettiCurves,
   computePersistence,
@@ -27,15 +27,27 @@ const PersistenceLandscape3D = dynamic(() => import("./PersistenceLandscape3D"),
 });
 
 export default function Studio() {
-  const [sample, setSample] = useState<SampleKey>("rings");
-  const [field, setField] = useState<ImageField>(() => SAMPLE_FIELDS.rings());
+  const [sample, setSample] = useState<SampleKey>("hubble");
+  // Seed with a cheap procedural field so the first frame has something to
+  // render while the Hubble JPEG decodes.
+  const [field, setField] = useState<ImageField>(() => sampleRings());
   const [t, setT] = useState(0.5);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(0.25);
 
-  // Recompute the field when the chosen sample changes.
+  // Resolve the field when the chosen sample changes. Procedural samples
+  // resolve synchronously; the Hubble asset and any future remote field load
+  // asynchronously through resolveSample().
   useEffect(() => {
-    setField(SAMPLE_FIELDS[sample]());
+    let cancelled = false;
+    resolveSample(sample)
+      .then((f) => {
+        if (!cancelled) setField(f);
+      })
+      .catch((e) => console.error("sample load failed", e));
+    return () => {
+      cancelled = true;
+    };
   }, [sample]);
 
   // Persistent homology — recomputed when the field changes.

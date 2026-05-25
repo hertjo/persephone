@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import type { SampleKey } from "@/lib/image";
+import { SAMPLES, type SampleKey } from "@/lib/image";
 
 type Props = {
   sample: SampleKey;
@@ -17,12 +17,9 @@ type Props = {
   onSpeed: (s: number) => void;
 };
 
-const SAMPLES: Array<{ key: SampleKey; label: string; subtitle: string }> = [
-  { key: "blobs", label: "Blobs", subtitle: "Gaussian sum — H₀ rich" },
-  { key: "rings", label: "Annuli", subtitle: "concentric rings — H₁ rich" },
-  { key: "terrain", label: "Terrain", subtitle: "Morse landscape" },
-  { key: "digit", label: "Figure 8", subtitle: "two loops" },
-];
+const SAMPLE_ENTRIES = Object.entries(SAMPLES) as Array<
+  [SampleKey, (typeof SAMPLES)[SampleKey]]
+>;
 
 export default function Controls({
   sample,
@@ -50,19 +47,19 @@ export default function Controls({
       <section>
         <div className="text-xs uppercase tracking-[0.25em] text-white/40 mb-2">field</div>
         <div className="grid grid-cols-2 gap-2">
-          {SAMPLES.map((s) => (
+          {SAMPLE_ENTRIES.map(([key, spec]) => (
             <button
-              key={s.key}
-              onClick={() => onSample(s.key)}
+              key={key}
+              onClick={() => onSample(key)}
               className={`text-left rounded-lg border px-3 py-2 transition ${
-                sample === s.key
+                sample === key
                   ? "border-cyan-400/60 bg-cyan-500/10 text-white"
                   : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/30 hover:text-white"
               }`}
             >
-              <div className="text-sm font-medium">{s.label}</div>
+              <div className="text-sm font-medium">{spec.label}</div>
               <div className="text-[10px] uppercase tracking-wider text-white/40">
-                {s.subtitle}
+                {spec.subtitle}
               </div>
             </button>
           ))}

@@ -11,7 +11,7 @@ export type ImageField = {
   label: string;
 };
 
-const MAX_SIDE = 192;
+const MAX_SIDE = 240;
 
 export async function loadImageToField(file: File): Promise<ImageField> {
   const url = URL.createObjectURL(file);
@@ -21,6 +21,11 @@ export async function loadImageToField(file: File): Promise<ImageField> {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function loadFieldFromUrl(url: string, label: string): Promise<ImageField> {
+  const img = await loadHTMLImage(url);
+  return rasterToField(img, label);
 }
 
 function loadHTMLImage(src: string): Promise<HTMLImageElement> {
@@ -49,9 +54,9 @@ function rasterToField(img: HTMLImageElement, label: string): ImageField {
     const r = data[i * 4];
     const g = data[i * 4 + 1];
     const b = data[i * 4 + 2];
-    values[i] = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    values[i] = 0.299 * r + 0.587 * g + 0.114 * b;
   }
-  return { values, width, height, label };
+  return normalize({ values, width, height, label });
 }
 
 // ---------------------------------------------------------------------------
@@ -211,11 +216,47 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-export const SAMPLE_FIELDS = {
-  blobs: sampleBlobs,
-  rings: sampleRings,
-  terrain: sampleTerrain,
-  digit: sampleDigit,
+type SampleSpec =
+  | { kind: "procedural"; label: string; subtitle: string; build: () => ImageField }
+  | { kind: "asset"; label: string; subtitle: string; url: string };
+
+export const SAMPLES: Record<string, SampleSpec> = {
+  hubble: {
+    kind: "asset",
+    label: "Hubble XDF",
+    subtitle: "deepest view of the universe",
+    url: "/hubble-xdf.jpg",
+  },
+  blobs: {
+    kind: "procedural",
+    label: "Blobs",
+    subtitle: "gaussian sum · H₀ rich",
+    build: sampleBlobs,
+  },
+  rings: {
+    kind: "procedural",
+    label: "Annuli",
+    subtitle: "concentric rings · H₁ rich",
+    build: sampleRings,
+  },
+  terrain: {
+    kind: "procedural",
+    label: "Terrain",
+    subtitle: "morse landscape",
+    build: sampleTerrain,
+  },
+  digit: {
+    kind: "procedural",
+    label: "Figure 8",
+    subtitle: "two loops",
+    build: sampleDigit,
+  },
 } as const;
 
-export type SampleKey = keyof typeof SAMPLE_FIELDS;
+export type SampleKey = keyof typeof SAMPLES;
+
+export async function resolveSample(key: SampleKey): Promise<ImageField> {
+  const spec = SAMPLES[key];
+  if (spec.kind === "procedural") return spec.build();
+  return loadFieldFromUrl(spec.url, spec.label);
+}
