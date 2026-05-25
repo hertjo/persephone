@@ -2,7 +2,7 @@
   "name": "persephone",
   "version": "0.1.0",
   "private": true,
-  "description": "Persistent Homology Engine for Spatial Vision — real-time topological analysis of image manifolds",
+  "description": "Persistent Homology Engine for Spatial Vision. Real-time topological analysis of image manifolds.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

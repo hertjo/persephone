@@ -79,7 +79,7 @@ Everything on screen, derived from first principles, with full proofs.}\\[0.2em]
 \vspace{0.4em}
 
 \noindent
-\textbf{Scope.} Persephone treats a grayscale image as a discrete Morse function and animates the persistent homology of its sublevel-set filtration. This note develops every concept that appears on the screen --- cubical complexes, simplicial homology, persistence modules, the structure theorem, persistence diagrams, barcodes, the Bubenik landscape, Alexander duality, and the union--find algorithm that drives it all --- with proofs given in full whenever the technique is elementary and as detailed sketches when the proof is long but standard, with precise pointers to the canonical sources \cite{EH10,Car09,Bub15,CSEH07,Hat02,ZC05,CB15}.
+\textbf{Scope.} Persephone treats a grayscale image as a discrete Morse function and animates the persistent homology of its sublevel-set filtration. This note develops every concept that appears on the screen (cubical complexes, simplicial homology, persistence modules, the structure theorem, persistence diagrams, barcodes, the Bubenik landscape, Alexander duality, and the union--find algorithm that drives it all) with proofs given in full whenever the technique is elementary and as detailed sketches when the proof is long but standard, with precise pointers to the canonical sources \cite{EH10,Car09,Bub15,CSEH07,Hat02,ZC05,CB15}.
 
 \tableofcontents
 \bigskip
@@ -107,7 +107,7 @@ and the \emph{superlevel set} is $\sublevG{\Omega}{t} := \{p\in\Omega \mid f(p) 
 \end{definition}
 
 \noindent
-The family $\{\sublevL{\Omega}{t}\}_{t\in\R}$ is monotone: $s\leq t$ implies $\sublevL{\Omega}{s}\subseteq\sublevL{\Omega}{t}$. This monotone family is the central object of study --- the \emph{sublevel-set filtration}.
+The family $\{\sublevL{\Omega}{t}\}_{t\in\R}$ is monotone: $s\leq t$ implies $\sublevL{\Omega}{s}\subseteq\sublevL{\Omega}{t}$. This monotone family is the central object of study, the \emph{sublevel-set filtration}.
 
 % ============================================================
 \section{Cubical complexes on the pixel grid}
@@ -228,7 +228,7 @@ For a $2$-dimensional cubical complex $K$:
   \item $\beta_1(K)$ is the number of independent $1$-dimensional ``holes'' (loops that cannot be filled in).
   \item $\beta_k(K)=0$ for $k\geq 2$ (the geometric realization sits in $\R^2$).
 \end{itemize}
-The first claim is the standard identification of $\Hk{0}$ with the free vector space on components, proved by exhibiting the augmentation $\Ck{0}\to\Ftwo^{\#\text{components}}$ whose kernel is exactly $\Bk{0}$. The third is dimensional --- $\Ck{k}=0$ for $k\geq 3$ in a $2$-dimensional cubical complex.
+The first claim is the standard identification of $\Hk{0}$ with the free vector space on components, proved by exhibiting the augmentation $\Ck{0}\to\Ftwo^{\#\text{components}}$ whose kernel is exactly $\Bk{0}$. The third is dimensional: $\Ck{k}=0$ for $k\geq 3$ in a $2$-dimensional cubical complex.
 \end{remark}
 
 \begin{lemma}[Rank--nullity for chain groups]\label{lem:ranknull}
@@ -354,7 +354,7 @@ A point $(b,d)\in\PD(\Hk{k}(\X_\bullet))$ encodes a $k$-dimensional topological 
   \item the points of $\PD(\Hk{1}(\X_\bullet))$ in {\color{accentH1}\textbf{magenta}};
   \item a glow halo around each point of radius $\propto \sqrt{d-b}$.
 \end{itemize}
-Counting points $(b,d)$ with $b\leq t < d$ yields $\beta_k(\X_t)$ exactly --- the live counters at the top of the diagram panel and the Betti curve panel.
+Counting points $(b,d)$ with $b\leq t < d$ yields $\beta_k(\X_t)$ exactly. This count feeds the live indicator at the top of the diagram panel and the Betti curve panel.
 
 % ============================================================
 \section{Computation: union--find with the elder rule}
@@ -406,7 +406,7 @@ It therefore suffices to verify that Algorithm \ref{alg:H0} computes $\PD(\Hk{0}
 
 \emph{Base.} $G^{(0)}=\emptyset$, $\beta_0(G^{(0)})=0$, $\PD=\emptyset$. Trivially correct.
 
-\emph{Inductive step.} Assume the algorithm correctly maintains $\PD$ at the start of iteration $k$ such that the multiset of \emph{closed} pairs in $\PD$ plus the currently active classes (one open pair per class) accounts for exactly $\beta_0(G^{(k-1)})$ live features at the present filtration value $f(p_{k-1})^+$ --- i.e., one ``open'' pair per current component, born at the minimum value in that component.
+\emph{Inductive step.} Assume the algorithm correctly maintains $\PD$ at the start of iteration $k$ such that the multiset of \emph{closed} pairs in $\PD$ plus the currently active classes (one open pair per class) accounts for exactly $\beta_0(G^{(k-1)})$ live features at the present filtration value $f(p_{k-1})^+$; that is, one ``open'' pair per current component, born at the minimum value in that component.
 
 At iteration $k$ we activate $p_k$ at value $v=f(p_k)$, increasing $\beta_0(G^{(k-1)})$ by $1$ (a new isolated vertex) before any merges. The new class has birth $v$. We now process the active neighbours of $p_k$ in any order:
 
@@ -468,7 +468,7 @@ Let $\widetilde{G}_t = (\sublevG{\Omega}{t}, E^*_t)$ denote the superlevel pixel
 \end{proposition}
 
 \begin{proof}
-By Prop.\ \ref{prop:H1bounded}, $\beta_1(\X_t)$ equals the number of bounded components of $\R^2\setminus\X_t$. The open set $\R^2\setminus\X_t$ deformation-retracts onto the dual graph whose vertices are superlevel pixel centres and whose edges include all king-move adjacencies (because diagonally-adjacent superlevel pixels meet only at a vertex of $\X_t$, and that vertex is in $\X_t$ iff all four surrounding pixels have $f\leq t$ --- equivalently, the diagonal pair of superlevel pixels is \emph{not} blocked). The unbounded component is the one that touches the outer boundary of $\Omega$ (if any).
+By Prop.\ \ref{prop:H1bounded}, $\beta_1(\X_t)$ equals the number of bounded components of $\R^2\setminus\X_t$. The open set $\R^2\setminus\X_t$ deformation-retracts onto the dual graph whose vertices are superlevel pixel centres and whose edges include all king-move adjacencies (because diagonally-adjacent superlevel pixels meet only at a vertex of $\X_t$, and that vertex is in $\X_t$ iff all four surrounding pixels have $f\leq t$; equivalently, the diagonal pair of superlevel pixels is \emph{not} blocked). The unbounded component is the one that touches the outer boundary of $\Omega$ (if any).
 \end{proof}
 
 \paragraph{Algorithmic compromise.}
@@ -528,7 +528,7 @@ For every persistence diagram $\PD$ (finitely many off-diagonal pairs) and every
 
 \textbf{(iii)} If $t\notin\bigcup_i[b_i,d_i]$ then $\Lambda_{(b_i,d_i)}(t)=0$ for all $i$, so $\Land_k(t)=0$.
 
-\textbf{(iv)} Sum and difference of landscapes: $\sum_{k\geq 1}\Land_k(t) = \sum_i\Lambda_{(b_i,d_i)}(t)$, since the sum of all tent values at $t$ equals the sum of all $k$-th largest values (just a reordering). The latter is a sum of finitely many tents, hence determines the diagram up to multi-set (by analyzing the slope discontinuities --- each tent has unique apex $(b+d)/2$ and slope-change points at $b$ and $d$, so the multi-set of break points and apexes can be read off). A standard argument (cf.\ \cite[Thm.~12]{Bub15}) shows that the sequence $(\Land_k)_k$ further refines this enough to be injective on multisets.
+\textbf{(iv)} Sum and difference of landscapes: $\sum_{k\geq 1}\Land_k(t) = \sum_i\Lambda_{(b_i,d_i)}(t)$, since the sum of all tent values at $t$ equals the sum of all $k$-th largest values (just a reordering). The latter is a sum of finitely many tents, hence determines the diagram up to multi-set (by analyzing the slope discontinuities; each tent has unique apex $(b+d)/2$ and slope-change points at $b$ and $d$, so the multi-set of break points and apexes can be read off). A standard argument (cf.\ \cite[Thm.~12]{Bub15}) shows that the sequence $(\Land_k)_k$ further refines this enough to be injective on multisets.
 
 (For completeness: the sequence $(\Land_k)$ determines $(\Land_1+\Land_2+\dots)$ and from this sum the multi-set of pairs is recovered as in the previous paragraph.)
 \end{proof}
@@ -539,7 +539,7 @@ The studio computes $\Land_1,\dots,\Land_{14}$ on a uniform sample of $200$ valu
 \section{Stability}
 % ============================================================
 
-A core theorem of TDA --- the reason persistence is a useful descriptor under noise --- says that persistence diagrams are Lipschitz-stable under perturbation of the input function.
+A core theorem of TDA, and the reason persistence is a useful descriptor under noise, states that persistence diagrams are Lipschitz-stable under perturbation of the input function.
 
 \begin{definition}[Bottleneck distance]\label{def:bottle}
 For two persistence diagrams $\PD_1,\PD_2$ (each augmented by the diagonal with infinite multiplicity), the \emph{bottleneck distance} is
@@ -670,6 +670,6 @@ the total cardinality $|\PD|$, and the working raster size. The identity $\chi=\
 
 \vspace{2em}
 \noindent\hrulefill\\
-{\footnotesize\itshape Companion to the Persephone studio --- topological data analysis for computer vision.}
+{\footnotesize\itshape Companion to the Persephone studio: topological data analysis for computer vision.}
 
 \end{document}

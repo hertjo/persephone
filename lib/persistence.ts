@@ -3,11 +3,11 @@
  * function f: Ω ⊂ ℤ² → ℝ on a cubical complex.
  *
  *   H₀ of the sublevel-set filtration { f ≤ t } is computed directly via
- *   union–find with the elder rule (Edelsbrunner & Harer, 2010).
+ *   union-find with the elder rule (Edelsbrunner & Harer, 2010).
  *
  *   H₁ of the sublevel filtration is recovered through Alexander duality:
  *   on the 2-sphere compactification, H₁({f ≤ t}) ≅ H̃₀({f > t}).
- *   Concretely, we run the same union–find in the descending direction over
+ *   Concretely, we run the same union-find in the descending direction over
  *   pixels and re-interpret births/deaths in the original (ascending) frame.
  */
 
@@ -70,7 +70,7 @@ function makeUnionFind(n: number) {
  * recording H₀ births and deaths under the elder rule.
  *
  * If `descending` is true the same procedure runs on the superlevel set,
- * producing the dual diagram that — by Alexander duality — encodes H₁.
+ * producing the dual diagram that, by Alexander duality, encodes H_1.
  */
 function sweepH0(
   values: Float32Array,

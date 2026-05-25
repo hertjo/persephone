@@ -142,7 +142,7 @@ export function sampleTerrain(seed = 13): ImageField {
 }
 
 export function sampleDigit(): ImageField {
-  // A stylized "8" — engineered to have two H₁ loops, useful as a pedagogical
+  // A stylized "8" with two H_1 loops, useful as a pedagogical
   // example because students immediately predict β₁ = 2.
   const w = DEFAULT_W;
   const h = DEFAULT_H;

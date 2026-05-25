@@ -69,7 +69,7 @@ function MathButton() {
 
 function Sigil() {
   // A tiny inline SVG suggesting a persistence diagram with two glowing dots
-  // above the diagonal — the project's visual signature.
+  // above the diagonal: the project's visual signature.
   return (
     <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
       <defs>

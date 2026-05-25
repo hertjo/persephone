@@ -1,10 +1,10 @@
 /**
  * Perceptually pleasant colormaps tuned for a dark background.
  *
- *   `viridis`  — the classic; for the field itself.
- *   `magma`    — for the level-set glow under the rising tide.
- *   `cyanFire` — accent for H₀ markers.
- *   `magenta`  — accent for H₁ markers.
+ *   `viridis`  : the classic, used for the field itself.
+ *   `magma`    : the level-set glow under the rising tide.
+ *   `cyanFire` : accent for H_0 markers.
+ *   `magenta`  : accent for H_1 markers.
  */
 
 type RGB = readonly [number, number, number];

@@ -52,7 +52,7 @@ void main() {
   float f = texture2D(u_field, c).r;
 
   // Sublevel set { f <= u_t } gets the warm magma palette; the rest is the
-  // cool background (viridis × dimming) — the boundary is the level set.
+  // cool background (viridis with dimming); the boundary is the level set.
   float inside = step(f, u_t);
 
   // Width of the "tide front" depends on the local gradient magnitude.
