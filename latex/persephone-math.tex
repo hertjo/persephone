@@ -1,0 +1,475 @@
+\documentclass[11pt]{article}
+
+% -------- Packages --------
+\usepackage[a4paper,margin=1in,top=1.1in,bottom=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,decorations.pathreplacing}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% -------- Colors --------
+\definecolor{accentH0}{HTML}{1F8FBF}
+\definecolor{accentH1}{HTML}{B83BA0}
+\definecolor{accentInk}{HTML}{0E1429}
+\definecolor{accentSub}{HTML}{4A546B}
+\definecolor{accentRule}{HTML}{D6DCE7}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accentH0,
+  citecolor=accentH0,
+  urlcolor=accentH1,
+}
+
+% -------- Theorem environments --------
+\newtheoremstyle{persdef}{0.9\baselineskip}{0.9\baselineskip}{\normalfont}{0pt}{\bfseries}{.}{0.5em}{}
+\theoremstyle{persdef}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{example}[definition]{Example}
+
+% -------- Notation macros --------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\Ftwo}{\F_2}
+\newcommand{\X}{X}
+\newcommand{\sublev}[1]{X_{#1}}
+\newcommand{\sublevL}[2]{#1_{\leq #2}}
+\newcommand{\sublevG}[2]{#1_{> #2}}
+\DeclareMathOperator{\imop}{im}
+\DeclareMathOperator{\kerop}{ker}
+\DeclareMathOperator{\rankop}{rank}
+\newcommand{\PD}{\mathrm{Dgm}}
+\newcommand{\Land}{\lambda}
+\newcommand{\persH}{H_\bullet}
+\newcommand{\Hk}[1]{H_{#1}}
+\newcommand{\Ck}[1]{C_{#1}}
+\newcommand{\Zk}[1]{Z_{#1}}
+\newcommand{\Bk}[1]{B_{#1}}
+\newcommand{\bnd}{\partial}
+
+% -------- Document --------
+\title{\vspace*{-1cm}\Large \bfseries Persephone: \\[0.2em]
+\large The Mathematics of Persistent Homology for Images}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\begin{center}
+\rule{0.6\textwidth}{0.4pt}\\[0.4em]
+{\small A rigorous companion to the Persephone visualization studio.\\
+Everything on screen, derived from first principles.}\\[0.2em]
+\rule{0.6\textwidth}{0.4pt}
+\end{center}
+
+\vspace{0.4em}
+
+\noindent
+\textbf{What this document does.} Persephone treats an image as a discrete Morse function and animates the persistent homology of its sublevel-set filtration. This note develops every concept appearing on the screen --- cubical complexes, simplicial homology, persistence modules, the structure theorem, persistence diagrams, barcodes, the Bubenik landscape, Alexander duality, and the union--find algorithm that drives it all --- in a self-contained way, starting from elementary linear algebra. References to the canonical sources (Edelsbrunner--Harer \cite{EH10}, Carlsson \cite{Car09}, Bubenik \cite{Bub15}, Cohen-Steiner--Edelsbrunner--Harer \cite{CSEH07}) appear inline.
+
+\tableofcontents
+\bigskip
+
+% ============================================================
+\section{Preliminaries and notation}
+% ============================================================
+
+We work over the finite field $\Ftwo = \Z/2\Z$ throughout. Homology with $\Ftwo$ coefficients suffices for everything in the visualization and lets us treat the persistence module as a $\Ftwo[t]$-module with no signs or orientation issues.
+
+\begin{definition}[Image as a scalar field]\label{def:image}
+A grayscale image of width $w$ and height $h$ is a function
+\[
+f : \Omega \to \R, \qquad \Omega := \{0,1,\dots,w{-}1\}\times\{0,1,\dots,h{-}1\}\subset\Z^2.
+\]
+We call $\Omega$ the \emph{pixel grid} and $f$ a \emph{discrete scalar field}.
+\end{definition}
+
+\begin{definition}[Sublevel and superlevel sets]\label{def:sublev}
+For $t\in\R$, the \emph{sublevel set} at parameter $t$ is
+\[
+\sublevL{\Omega}{t} \;:=\; \{p\in\Omega \mid f(p)\leq t\},
+\]
+and the \emph{superlevel set} is $\sublevG{\Omega}{t} := \{p\in\Omega \mid f(p) > t\}$.
+\end{definition}
+
+As $t$ sweeps from $\min f$ to $\max f$, the family $\{\sublevL{\Omega}{t}\}_{t\in\R}$ grows monotonically, $\sublevL{\Omega}{s}\subseteq\sublevL{\Omega}{t}$ for $s\leq t$. This monotone family is the central object of study --- it is the \emph{sublevel-set filtration}.
+
+% ============================================================
+\section{Cubical complexes on the pixel grid}
+% ============================================================
+
+To do topology on a pixel grid we need a combinatorial model of its geometric realization. The cleanest is the \emph{cubical complex}.
+
+\begin{definition}[Elementary cube]
+An \emph{elementary interval} is a subset of $\R$ of the form $[k,k]$ (a point, length $0$) or $[k,k{+}1]$ (a unit segment, length $1$) for some $k\in\Z$. An \emph{elementary cube} of dimension $d$ is a Cartesian product $Q = I_1\times\dots\times I_n\subset\R^n$ of elementary intervals where exactly $d$ of the $I_j$ are unit segments and the rest are points.
+\end{definition}
+
+\begin{definition}[Cubical complex of the pixel grid]\label{def:cubcomp}
+Let $\Omega = \{0,\dots,w{-}1\}\times\{0,\dots,h{-}1\}$. The cubical complex $\X$ associated to $\Omega$ has
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item \emph{$2$-cells (pixels):} squares $[i,i{+}1]\times[j,j{+}1]$, one for each $(i,j)\in\Omega$;
+  \item \emph{$1$-cells (edges):} unit segments shared between two adjacent pixels, $[i,i{+}1]\times\{j\}$ and $\{i\}\times[j,j{+}1]$;
+  \item \emph{$0$-cells (vertices):} corner points $(i,j)$ with $0\leq i\leq w,\ 0\leq j\leq h$.
+\end{itemize}
+The geometric realization $|\X|$ is the rectangle $[0,w]\times[0,h]\subset\R^2$.
+\end{definition}
+
+\paragraph{The $V$-construction.} The filtration value of a cell must be compatible with the function $f$ on pixels. We use the \emph{$V$-construction} (cf.\ \cite{WCV12}): every cell $\sigma$ is assigned
+\[
+F(\sigma) \;:=\; \max \{ f(p) : p \in\Omega,\ \sigma\subseteq \overline{p}\},
+\]
+where $\overline{p}$ denotes the closed pixel square at $p$. Concretely: vertices and edges take the maximum value of any incident pixel; a $2$-cell takes its own pixel value. The filtration
+\[
+\X_t \;:=\; \{\sigma\in\X : F(\sigma)\leq t\} \qquad (t\in\R)
+\]
+is then a monotone family of cubical subcomplexes whose pixel content equals $\sublevL{\Omega}{t}$ on the nose. We henceforth conflate ``the cubical sublevel set at $t$'' with $\X_t$.
+
+% ============================================================
+\section{Discrete Morse functions and the filtration}
+% ============================================================
+
+\begin{definition}[Discrete Morse-like function]
+We say $f:\Omega\to\R$ is \emph{generic} if $f(p)\neq f(q)$ for all $p\neq q$. Genericity ensures every transition $\sublevL{\Omega}{t-\epsilon}\hookrightarrow\sublevL{\Omega}{t}$ adds exactly one pixel.
+\end{definition}
+
+\noindent
+The visualization breaks ties by lexicographic pixel index, so the underlying filtration behaves as if $f$ were generic. With this convention the filtration of $\X$ is a sequence
+\[
+\emptyset = \X_{t_0} \subsetneq \X_{t_1} \subsetneq \dots \subsetneq \X_{t_N} = \X,
+\qquad N = wh,
+\]
+of nested cubical complexes, each obtained from the previous by adding the lower star of one new pixel (the pixel together with all its cells of lower dimension that become newly covered, in $V$-construction terms).
+
+% ============================================================
+\section{Cellular homology over \texorpdfstring{$\Ftwo$}{F2}}
+% ============================================================
+
+We recall the algebraic backbone. Let $K$ be a finite CW complex; the cubical complexes above are a special case.
+
+\begin{definition}[Chain groups]
+For each integer $k\geq 0$, the $k$-th \emph{chain group} is the $\Ftwo$-vector space
+\[
+\Ck{k}(K) \;:=\; \Ftwo\langle \sigma : \sigma\text{ is a $k$-cell of }K\rangle,
+\]
+i.e.\ the free $\Ftwo$-vector space spanned by the $k$-cells.
+\end{definition}
+
+\begin{definition}[Boundary operator]
+The \emph{boundary} $\bnd_k:\Ck{k}\to\Ck{k-1}$ is the linear map sending a $k$-cell to the sum (in $\Ftwo$) of its codimension-$1$ faces. Concretely:
+\begin{align*}
+\bnd_2\bigl([i,i{+}1]\times[j,j{+}1]\bigr)
+  &= [i,i{+}1]\times\{j\} + [i,i{+}1]\times\{j{+}1\} \\
+  &\quad + \{i\}\times[j,j{+}1] + \{i{+}1\}\times[j,j{+}1],\\
+\bnd_1\bigl([i,i{+}1]\times\{j\}\bigr) &= (i,j) + (i{+}1,j),\quad \text{etc.}
+\end{align*}
+\end{definition}
+
+\begin{lemma}[$\partial^2 = 0$]
+$\bnd_{k-1}\circ\bnd_k = 0$ for every $k$.
+\end{lemma}
+
+\noindent
+The proof is a direct counting argument: every $(k{-}2)$-face of a $k$-cell lies on exactly two of its $(k{-}1)$-faces, contributing $0$ mod $2$.
+
+\begin{definition}[Cycles, boundaries, homology]
+\begin{align*}
+\Zk{k}(K) &:= \kerop\bnd_k && (\text{$k$-cycles})\\
+\Bk{k}(K) &:= \imop\bnd_{k+1} && (\text{$k$-boundaries})\\
+\Hk{k}(K) &:= \Zk{k}(K) / \Bk{k}(K) && (\text{$k$-th homology}).
+\end{align*}
+The $k$-th \emph{Betti number} is $\beta_k(K):=\dim_{\Ftwo}\Hk{k}(K)$.
+\end{definition}
+
+\begin{remark}[Intuitive meaning]
+For a $2$-dimensional cubical complex $K$:
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item $\beta_0(K)$ is the number of path-connected components of $|K|$.
+  \item $\beta_1(K)$ is the number of independent $1$-dimensional ``holes'' (loops that cannot be filled in).
+  \item $\beta_k(K)=0$ for $k\geq 2$ (the geometric realization sits in $\R^2$).
+\end{itemize}
+\end{remark}
+
+\begin{proposition}[Euler characteristic]\label{prop:euler}
+For a finite CW complex,
+\[
+\chi(K) \;:=\; \sum_{k\geq 0} (-1)^k \#\{k\text{-cells}\} \;=\; \sum_{k\geq 0}(-1)^k \beta_k(K).
+\]
+\end{proposition}
+
+\noindent
+For our cubical sublevel sets this reduces to $\chi(\X_t) = \beta_0(\X_t) - \beta_1(\X_t)$, which is exactly the quantity \texttt{$\chi$} displayed in the invariants panel of the studio.
+
+% ============================================================
+\section{Persistent homology}
+% ============================================================
+
+Homology of a single space discards too much information. The point of persistence is to track \emph{how} cycles appear and disappear along a filtration.
+
+\begin{definition}[Persistence module]\label{def:persmodule}
+A \emph{persistence module} (over $\R$, indexed pointwise) is a family $\mathbb{V} = \{V_t\}_{t\in\R}$ of $\Ftwo$-vector spaces together with linear maps $v_{s,t}:V_s\to V_t$ for every $s\leq t$, satisfying
+\[
+v_{t,t} = \mathrm{id},\qquad v_{s,u} = v_{t,u}\circ v_{s,t}\ \ \forall\, s\leq t\leq u.
+\]
+\end{definition}
+
+The sublevel-set filtration $\{\X_t\}$ produces, by functoriality of $\Hk{k}$, the \emph{persistent homology module}
+\[
+\Hk{k}(\X_\bullet)\;:=\;\bigl\{\Hk{k}(\X_t)\bigr\}_{t\in\R}, \qquad
+i_{s,t} : \Hk{k}(\X_s) \to \Hk{k}(\X_t)
+\]
+induced by the inclusion $\X_s\hookrightarrow \X_t$.
+
+\begin{definition}[Interval module]
+For an interval $[b,d)\subseteq\R$, the \emph{interval module} $\Ftwo[b,d)$ is the persistence module
+\[
+V_t = \begin{cases} \Ftwo & b\leq t < d,\\ 0 & \text{else,}\end{cases}\qquad v_{s,t} = \mathrm{id}\ \text{whenever both nonzero.}
+\]
+\end{definition}
+
+\begin{theorem}[Structure theorem; Carlsson--Zomorodian \cite{ZC05}, Crawley-Boevey \cite{CB15}]\label{thm:structure}
+Let $\mathbb{V}$ be a persistence module that is \emph{pointwise finite-dimensional} (each $V_t$ has finite dimension). Then $\mathbb{V}$ decomposes, uniquely up to isomorphism and reordering, as a direct sum of interval modules:
+\[
+\mathbb{V} \;\cong\; \bigoplus_{i\in I} \Ftwo[b_i,d_i).
+\]
+\end{theorem}
+
+\noindent
+The persistent homology module of any finite filtration is pointwise finite-dimensional, so this applies.
+
+\begin{definition}[Persistence diagram and barcode]
+The \emph{persistence diagram} of $\mathbb{V}$ is the multiset
+\[
+\PD(\mathbb{V}) \;:=\; \bigl\{(b_i,d_i)\bigr\}_{i\in I} \;\cup\; \Delta_\infty
+\]
+of birth--death pairs from the structure theorem, where $\Delta_\infty$ denotes the diagonal $\{(x,x):x\in\R\}$ taken with infinite multiplicity (a technical device for stability proofs).
+The \emph{barcode} is the same multiset rendered as a stack of horizontal bars $[b_i,d_i)$.
+\end{definition}
+
+\begin{remark}[Birth--death geometric meaning]
+A point $(b,d)\in\PD(\Hk{k}(\X_\bullet))$ encodes a $k$-dimensional topological feature that
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item is born at filtration value $b$ --- the first time a $k$-cycle representing the feature exists,
+  \item dies at filtration value $d$ --- the first time that cycle becomes a boundary.
+\end{itemize}
+The \emph{lifetime} (\emph{persistence}) of the feature is $d-b$. Points far above the diagonal are robust; points hugging the diagonal are short-lived noise.
+\end{remark}
+
+\paragraph{What the studio renders.} The persistence-diagram panel in the studio plots:
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item the points of $\PD(\Hk{0}(\X_\bullet))$ in {\color{accentH0}\textbf{cyan}};
+  \item the points of $\PD(\Hk{1}(\X_\bullet))$ in {\color{accentH1}\textbf{magenta}};
+  \item a glow halo around each point of radius $\propto \sqrt{d-b}$.
+\end{itemize}
+Counting points with $b\leq t < d$ gives $\beta_k(\X_t)$ exactly --- this is the live counter at the top of the diagram panel and feeds the Betti curve.
+
+% ============================================================
+\section{Computation: union--find with the elder rule}
+% ============================================================
+
+The studio computes $\PD(\Hk{0}(\X_\bullet))$ in linear time (up to the inverse Ackermann factor) using union--find. We state the algorithm and its correctness.
+
+\begin{definition}[Union--find structure]
+A \emph{disjoint-set} (or union--find) data structure on a finite set $S$ maintains a partition of $S$ into disjoint classes. It supports
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item $\textsc{MakeSet}(x)$: create the singleton $\{x\}$;
+  \item $\textsc{Find}(x)$: return a canonical representative of the class containing $x$;
+  \item $\textsc{Union}(x,y)$: merge the classes of $x$ and $y$.
+\end{itemize}
+With union-by-rank and path compression, any sequence of $m$ operations on $n$ elements runs in $O(m\,\alpha(n))$ amortised time, where $\alpha$ is the inverse Ackermann function \cite{Tar75}.
+\end{definition}
+
+\begin{algorithm}[h!]
+\caption{Sublevel $H_0$ persistence via union--find with the elder rule.}\label{alg:H0}
+\begin{algorithmic}[1]
+\State Sort pixels $p_1,\dots,p_N$ so that $f(p_1)\leq\dots\leq f(p_N)$ (ties broken lex.).
+\State Initialise an empty union--find structure $U$.
+\State Initialise an empty list $\PD$ of pairs.
+\For{$k=1,\dots,N$}
+  \State $v\gets f(p_k)$;\quad activate $p_k$;\quad $\textsc{MakeSet}(p_k)$, record birth-site $b(p_k)\gets p_k$.
+  \For{each $4$-neighbour $q$ of $p_k$ that is already active}
+    \State $r_p\gets\textsc{Find}(p_k)$;\quad $r_q\gets\textsc{Find}(q)$.
+    \If{$r_p\neq r_q$}
+      \State Let $r^\star$ be the class with the \emph{smaller} birth value (the \emph{elder});
+      \State \quad let $r^\dagger$ be the other class (the \emph{younger}).
+      \State Append $(f(b(r^\dagger)),\,v)$ to $\PD$.\Comment{younger dies at the merge value}
+      \State $\textsc{Union}(r^\star,r^\dagger)$, retaining $b(r^\star)$ as the new birth-site.
+    \EndIf
+  \EndFor
+\EndFor
+\State Append $(f(b(r_\infty)),\,\max f)$ to $\PD$ for the one essential class.
+\State \Return $\PD$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Elder-rule correctness]\label{thm:elder}
+For a sublevel-set filtration $\{\X_t\}$ with generic $f$, Algorithm \ref{alg:H0} outputs exactly the persistence diagram of $\Hk{0}(\X_\bullet)$, in $O(N\,\alpha(N))$ time after the initial sort.
+\end{theorem}
+
+\noindent
+\emph{Proof sketch.} Adding $p_k$ to $\X_{f(p_k)^-}$ either (a) creates a new connected component (lower star with no previously active neighbour), or (b) merges $r\geq 2$ existing components into one. In case (a) the rank of $\Hk{0}$ rises by one --- a birth at $f(p_k)$. In case (b) the rank drops by $r-1$ --- exactly $r-1$ deaths. The elder rule (the older component survives) is the unique rule consistent with the structure theorem on the level of class representatives \cite[Ch.~VII]{EH10}. \qed
+
+% ============================================================
+\section{Alexander duality and \texorpdfstring{$H_1$}{H1} for images}
+% ============================================================
+
+The $H_0$ algorithm above only recovers $0$-dimensional homology. The studio also displays an $H_1$ diagram. We obtain it via a duality argument.
+
+\begin{theorem}[Alexander duality, \cite{Hat02} \S 3.3]\label{thm:AD}
+Let $A$ be a compact, locally contractible, nonempty subspace of $S^n$. For all $0\leq k\leq n-1$, there is an isomorphism
+\[
+\widetilde{H}_k(S^n\setminus A;\Ftwo) \;\cong\; \widetilde{H}^{n-k-1}(A;\Ftwo),
+\]
+where $\widetilde{H}$ denotes reduced (co)homology.
+\end{theorem}
+
+\noindent
+We use the case $n=2$, $k=0$. Compactify the plane to $S^2 = \R^2\cup\{\infty\}$. For a sublevel set $\X_t\subset\R^2$, the complement on $S^2$ is $S^2\setminus\X_t$. By Alexander duality and the universal coefficient theorem over the field $\Ftwo$,
+\[
+\widetilde{H}_1(\X_t;\Ftwo) \;\cong\; \widetilde{H}_0(S^2\setminus\X_t;\Ftwo).
+\]
+The complement deformation-retracts (in the cellular sense) to the open superlevel set $\sublevG{\X}{t}$ together with the point at infinity --- a single extra component that we discard by reducing.
+
+\begin{proposition}[$H_1$ via superlevel $H_0$]\label{prop:H1}
+Let $\widetilde{\beta}_0(\sublevG{\X}{t})$ denote the number of bounded connected components of the superlevel set. Then
+\[
+\beta_1(\X_t) \;=\; \widetilde{\beta}_0(\sublevG{\X}{t}).
+\]
+Each $H_1$ feature $(b,d)$ in the sublevel filtration corresponds bijectively to an $H_0$ feature $(d',b')$ in the superlevel filtration with $b' = d$, $d' = b$ --- the descending union--find sweep merges the dual components in reversed order.
+\end{proposition}
+
+\noindent
+This is exactly the second pass performed by \texttt{computePersistence} in the implementation: it runs Algorithm \ref{alg:H0} a second time on pixels sorted in \emph{descending} order, then reinterprets each pair $(b',d')$ from the superlevel sweep as a sublevel $H_1$ pair $(b,d) = (d', b')$.
+
+% ============================================================
+\section{Persistence landscapes}
+% ============================================================
+
+The persistence diagram is a multiset, which is awkward as a feature vector for statistics or machine learning. Bubenik \cite{Bub15} introduced a $1$-parameter family of real-valued functions encoding the same data.
+
+\begin{definition}[Tent function]
+For a pair $(b,d)\in\R^2$ with $b<d$, the \emph{tent function} is
+\[
+\Lambda_{(b,d)}(t) \;:=\; \max\bigl\{\,0,\ \min(t-b,\ d-t)\,\bigr\}, \qquad t\in\R.
+\]
+$\Lambda_{(b,d)}$ is supported on $[b,d]$ with apex at $((b+d)/2,(d-b)/2)$, i.e.\ height equal to half the lifetime.
+\end{definition}
+
+\begin{definition}[Persistence landscape; Bubenik 2015]\label{def:landscape}
+Let $\PD = \{(b_i,d_i)\}_{i\in I}$ be a persistence diagram. Its \emph{$k$-th landscape function} is
+\[
+\Land_k(t) \;:=\; \operatorname{kmax}_{i\in I} \Lambda_{(b_i,d_i)}(t),
+\]
+the $k$-th largest value (with ties broken arbitrarily) among the tent functions evaluated at $t$. The full \emph{persistence landscape} is the sequence $\Land = (\Land_1,\Land_2,\dots)$ of functions $\R\to[0,\infty)$.
+\end{definition}
+
+\begin{proposition}[Basic properties]\label{prop:landprops}
+For every persistence diagram $\PD$ and every $k\geq 1$:
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item $\Land_k$ is $1$-Lipschitz, hence continuous.
+  \item $\Land_1\geq\Land_2\geq\dots\geq 0$ pointwise.
+  \item $\Land_k$ has support contained in $\bigcup_i [b_i,d_i]$.
+  \item The map $\PD\mapsto\Land$ is an injection (the landscape determines the diagram).
+\end{itemize}
+\end{proposition}
+
+The studio computes $\Land_1,\dots,\Land_{14}$ on a uniform sample of $200$ values of $t$ and lifts them into $\R^3$: the $x$-axis is $t$, the $y$-axis is $\Land_k(t)$, the $z$-axis is $k$. Adjacent levels are stitched with translucent additive triangles, producing the glowing wireframe terrain.
+
+% ============================================================
+\section{Stability}
+% ============================================================
+
+A core theorem of TDA --- the reason persistence is a useful descriptor under noise --- says that persistence diagrams are Lipschitz-stable under perturbation of the input function.
+
+\begin{definition}[Bottleneck distance]
+For two persistence diagrams $\PD_1,\PD_2$, the \emph{bottleneck distance} is
+\[
+d_B(\PD_1,\PD_2) \;:=\; \inf_{\eta} \sup_{x\in\PD_1} \|x - \eta(x)\|_\infty,
+\]
+where the infimum is over bijections $\eta : \PD_1 \to \PD_2$ (with the diagonal $\Delta_\infty$ enriching both sides to allow ``birth = death'' matches).
+\end{definition}
+
+\begin{theorem}[Persistence stability; Cohen-Steiner--Edelsbrunner--Harer \cite{CSEH07}]\label{thm:stab}
+Let $f,g:X\to\R$ be continuous, tame functions on a triangulable space. Then for every degree $k$,
+\[
+d_B\bigl(\PD(\Hk{k}(f)),\PD(\Hk{k}(g))\bigr) \;\leq\; \|f-g\|_\infty.
+\]
+\end{theorem}
+
+\begin{remark}
+For the image setting: a perturbation of pixel intensities by at most $\varepsilon$ moves every point of the persistence diagram by at most $\varepsilon$ in the $\ell^\infty$ sense. In particular, low-amplitude photographic noise produces only near-diagonal noise in the diagram, which the studio fades visually (small lifetime = small halo).
+\end{remark}
+
+% ============================================================
+\section{What every panel shows}
+% ============================================================
+
+This section maps each visible panel of the studio to the mathematical object it renders.
+
+\subsection*{Sublevel-set canvas (centre)}
+A $V$-construction visualisation of the cubical filtration. For the current $t$ the shader draws:
+\begin{itemize}[leftmargin=2em,itemsep=0.2em]
+  \item the sublevel set $\sublevL{\Omega}{t}$ in a \emph{warm} (magma) palette;
+  \item the superlevel set $\sublevG{\Omega}{t}$ in a \emph{cool} (viridis) palette, dimmed;
+  \item a glowing tide front along the level set $\{p:f(p)=t\}$ whose band width is inversely proportional to $\|\nabla f\|$, so flat regions have a wide soft glow and steep edges a tight sharp glow.
+\end{itemize}
+
+\subsection*{Persistence diagram (top right)}
+The multiset $\PD(\Hk{0})\sqcup\PD(\Hk{1})$ plotted in the (birth, death) plane, above the diagonal. Active features (birth $\leq t <$ death) are drawn bright; expired features are dimmed.
+
+\subsection*{Persistence barcode (bottom centre)}
+Each pair $(b,d)\in\PD$ rendered as a horizontal bar $[b,d]$, sorted by birth. The vertical guideline marks the current $t$; bars intersecting it are alive at $t$.
+
+\subsection*{Betti curves (centre, above the barcode)}
+The functions
+\[
+\beta_0(t) \;=\; \#\{(b,d)\in\PD_0 : b\leq t < d\}, \qquad
+\beta_1(t) \;=\; \#\{(b,d)\in\PD_1 : b\leq t < d\},
+\]
+sampled on a uniform grid in $t$. These are step functions that the renderer interpolates linearly. Their alternating sum is the live Euler characteristic from Prop.~\ref{prop:euler}.
+
+\subsection*{Persistence landscape (bottom right, 3D)}
+The stack $\{(\,t,\,\Land_k(t),\,k\,)\}$ from Definition \ref{def:landscape}, $k=1,\dots,14$, sampled on a uniform $200$-point grid. Layers are stitched into translucent triangle strips and rendered with additive bloom; an autorotating orbit camera reveals the topography.
+
+\subsection*{Invariants strip (top right)}
+The live integers
+\[
+\beta_0(t),\quad \beta_1(t),\quad \chi(t) = \beta_0(t)-\beta_1(t),
+\]
+the total cardinality $|\PD|$, and the working raster size.
+
+% ============================================================
+\section*{References}
+\addcontentsline{toc}{section}{References}
+% ============================================================
+
+\renewcommand{\refname}{\vspace*{-1em}}
+\begin{thebibliography}{99}
+\bibitem[Bub15]{Bub15} P.~Bubenik. \emph{Statistical topological data analysis using persistence landscapes.} J.~Mach.~Learn.~Res.~16 (2015), 77--102.
+\bibitem[Car09]{Car09} G.~Carlsson. \emph{Topology and data.} Bull.~Amer.~Math.~Soc.~46 (2009), no.~2, 255--308.
+\bibitem[CSEH07]{CSEH07} D.~Cohen-Steiner, H.~Edelsbrunner, J.~Harer. \emph{Stability of persistence diagrams.} Discrete Comput.~Geom.~37 (2007), 103--120.
+\bibitem[CB15]{CB15} W.~Crawley-Boevey. \emph{Decomposition of pointwise finite-dimensional persistence modules.} J.~Algebra Appl.~14 (2015), no.~5.
+\bibitem[EH10]{EH10} H.~Edelsbrunner, J.~Harer. \emph{Computational Topology: An Introduction.} AMS, 2010.
+\bibitem[Hat02]{Hat02} A.~Hatcher. \emph{Algebraic Topology.} Cambridge University Press, 2002.
+\bibitem[Tar75]{Tar75} R.~E.~Tarjan. \emph{Efficiency of a good but not linear set union algorithm.} J.~ACM 22 (1975), 215--225.
+\bibitem[WCV12]{WCV12} H.~Wagner, C.~Chen, E.~Vu\c{c}ini. \emph{Efficient computation of persistent homology for cubical data.} In \emph{Topological Methods in Data Analysis and Visualization II}, Springer, 2012, 91--106.
+\bibitem[ZC05]{ZC05} A.~Zomorodian, G.~Carlsson. \emph{Computing persistent homology.} Discrete Comput.~Geom.~33 (2005), 249--274.
+\end{thebibliography}
+
+\vspace{2em}
+\noindent\hrulefill\\
+{\footnotesize\itshape Companion to the Persephone studio --- topological data analysis for computer vision.}
+
+\end{document}

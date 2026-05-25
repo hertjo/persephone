@@ -25,7 +25,45 @@ function Header() {
           </p>
         </div>
       </div>
+      <div className="ml-auto">
+        <MathButton />
+      </div>
     </header>
+  );
+}
+
+function MathButton() {
+  return (
+    <a
+      href="/persephone-math.pdf"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group inline-flex items-center gap-2 rounded-full border border-white/[0.09] bg-white/[0.03] pl-2.5 pr-3.5 py-1.5 text-[12px] text-white/75 hover:text-white hover:border-cyan-400/40 hover:bg-cyan-400/[0.05] transition-colors duration-200"
+      title="Read the rigorous mathematical companion (PDF)"
+    >
+      <span
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/[0.06] text-[11px] font-serif italic text-white/85 group-hover:bg-cyan-400/15 group-hover:text-cyan-200 transition-colors"
+        aria-hidden
+      >
+        ƒ
+      </span>
+      <span className="tracking-tight">mathematical companion</span>
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 10 10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-white/35 group-hover:text-cyan-300 transition-colors"
+        aria-hidden
+      >
+        <path d="M4 1.5 H8.5 V6" />
+        <path d="M8.5 1.5 L3 7" />
+      </svg>
+    </a>
   );
 }
 
