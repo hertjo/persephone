@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEvent } from "react";
+import { useRef, type ChangeEvent } from "react";
 import { SAMPLES, type SampleKey } from "@/lib/image";
 
 type Props = {
@@ -34,54 +34,68 @@ export default function Controls({
   speed,
   onSpeed,
 }: Props) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) onUpload(f);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const span = max - min || 1;
   const tNorm = (t - min) / span;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <section>
-        <div className="text-xs uppercase tracking-[0.25em] text-white/40 mb-2">field</div>
-        <div className="grid grid-cols-2 gap-2">
-          {SAMPLE_ENTRIES.map(([key, spec]) => (
-            <button
-              key={key}
-              onClick={() => onSample(key)}
-              className={`text-left rounded-lg border px-3 py-2 transition ${
-                sample === key
-                  ? "border-cyan-400/60 bg-cyan-500/10 text-white"
-                  : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/30 hover:text-white"
-              }`}
-            >
-              <div className="text-sm font-medium">{spec.label}</div>
-              <div className="text-[10px] uppercase tracking-wider text-white/40">
-                {spec.subtitle}
-              </div>
-            </button>
-          ))}
+        <SectionLabel>field</SectionLabel>
+        <div className="grid grid-cols-2 gap-2 mt-2.5">
+          {SAMPLE_ENTRIES.map(([key, spec]) => {
+            const active = sample === key;
+            return (
+              <button
+                key={key}
+                onClick={() => onSample(key)}
+                className={[
+                  "text-left rounded-xl px-3 py-2.5 transition-all duration-200",
+                  "border",
+                  active
+                    ? "border-cyan-400/55 bg-cyan-400/[0.08] text-white shadow-[0_0_0_1px_rgba(86,224,255,0.2),inset_0_1px_0_rgba(255,255,255,0.04)]"
+                    : "border-white/[0.07] bg-white/[0.02] text-white/65 hover:border-white/20 hover:bg-white/[0.04] hover:text-white",
+                ].join(" ")}
+              >
+                <div className="text-[13px] font-medium tracking-tight leading-tight">
+                  {spec.label}
+                </div>
+                <div className="text-[10px] tracking-[0.06em] text-white/40 mt-0.5">
+                  {spec.subtitle}
+                </div>
+              </button>
+            );
+          })}
         </div>
-        <label className="mt-3 block">
-          <span className="text-[10px] uppercase tracking-[0.25em] text-white/40">
-            or upload an image
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFile}
-            className="mt-1 block w-full text-xs text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:text-white file:hover:bg-white/20 file:cursor-pointer"
-          />
-        </label>
+
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-[12px] text-white/70 hover:text-white hover:bg-white/[0.05] hover:border-white/20 transition-colors"
+        >
+          <UploadIcon />
+          <span>upload image</span>
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFile}
+          className="hidden"
+        />
       </section>
 
       <section>
-        <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/40 mb-2">
-          <span>filtration value t</span>
-          <span className="font-mono normal-case tracking-normal text-white/70">
-            {t.toFixed(3)}
+        <div className="flex items-baseline justify-between mb-2.5">
+          <SectionLabel>filtration value</SectionLabel>
+          <span className="font-mono text-[12px] text-white/80 tabular-nums">
+            t = {t.toFixed(3)}
           </span>
         </div>
         <input
@@ -91,16 +105,18 @@ export default function Controls({
           step={0.001}
           value={tNorm}
           onChange={(e) => onT(min + Number(e.target.value) * span)}
-          className="w-full accent-cyan-400"
+          className="w-full"
         />
-        <div className="flex items-center justify-between mt-3 gap-2">
+        <div className="flex items-center justify-between mt-3.5 gap-2">
           <button
             onClick={onTogglePlay}
-            className="px-3 py-1.5 rounded-md border border-white/15 bg-white/[0.05] text-xs text-white hover:bg-white/10"
+            aria-label={playing ? "pause sweep" : "play sweep"}
+            className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-[11.5px] text-white/85 hover:bg-white/[0.06] hover:border-white/20 transition-colors"
           >
-            {playing ? "❚❚  pause sweep" : "▶  play sweep"}
+            {playing ? <PauseIcon /> : <PlayIcon />}
+            <span>{playing ? "pause" : "play"}</span>
           </button>
-          <label className="flex items-center gap-2 text-xs text-white/50">
+          <label className="flex items-center gap-2 text-[10.5px] tracking-[0.08em] uppercase text-white/40">
             <span>speed</span>
             <input
               type="range"
@@ -109,11 +125,45 @@ export default function Controls({
               step={0.01}
               value={speed}
               onChange={(e) => onSpeed(Number(e.target.value))}
-              className="w-20 accent-fuchsia-400"
+              className="w-20"
             />
           </label>
         </div>
       </section>
     </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[10px] uppercase tracking-[0.28em] text-white/35">
+      {children}
+    </div>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
+      <path d="M2 1.5 L2 8.5 L8 5 Z" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
+      <rect x="2" y="1.5" width="2.2" height="7" rx="0.6" />
+      <rect x="5.8" y="1.5" width="2.2" height="7" rx="0.6" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 8.5 L6 1.8 M3.2 4.6 L6 1.8 L8.8 4.6" />
+      <path d="M2 9.4 L2 10.2 L10 10.2 L10 9.4" />
+    </svg>
   );
 }

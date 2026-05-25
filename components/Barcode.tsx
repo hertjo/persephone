@@ -34,9 +34,11 @@ export default function Barcode({ h0, h1, min, max, cursor }: Props) {
 
   return (
     <div className="w-full h-full overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/40 mb-2">
-        <span>persistence barcode</span>
-        <span className="text-white/40 font-mono">
+      <div className="flex items-center justify-between mb-2 shrink-0">
+        <span className="text-[13px] font-medium tracking-tight text-white/90">
+          persistence barcode
+        </span>
+        <span className="text-[10px] uppercase tracking-[0.24em] text-white/35">
           {sorted.length} features
         </span>
       </div>

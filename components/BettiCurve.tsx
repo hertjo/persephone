@@ -50,12 +50,22 @@ export default function BettiCurve({ ts, b0, b1, min, max, cursor }: Props) {
   const cursorX = PAD + ((cursor - min) / span) * (W - PAD * 2);
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/40 mb-1">
-        <span>Betti curves β₀(t), β₁(t)</span>
-        <span className="font-mono text-white/40">peak {peak.toFixed(0)}</span>
+    <div className="w-full h-full flex flex-col">
+      <div className="flex items-center justify-between mb-1 shrink-0">
+        <span className="text-[10px] uppercase tracking-[0.24em] text-white/35">
+          β₀(t)  ·  β₁(t)
+        </span>
+        <span className="font-mono text-[10px] tabular-nums text-white/35">
+          peak {peak.toFixed(0)}
+        </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" role="img" aria-label="betti curves">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="w-full flex-1 min-h-0 block"
+        role="img"
+        aria-label="betti curves"
+      >
         <defs>
           <linearGradient id="b0-fill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={ACCENT_H0} stopOpacity="0.45" />

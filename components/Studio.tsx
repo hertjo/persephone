@@ -16,11 +16,10 @@ import Barcode from "./Barcode";
 import BettiCurve from "./BettiCurve";
 import Controls from "./Controls";
 
-// Three.js needs to be client-only.
 const PersistenceLandscape3D = dynamic(() => import("./PersistenceLandscape3D"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full grid place-items-center text-white/40 text-sm">
+    <div className="w-full h-full grid place-items-center text-white/30 text-xs tracking-wider uppercase">
       conjuring landscape…
     </div>
   ),
@@ -28,16 +27,11 @@ const PersistenceLandscape3D = dynamic(() => import("./PersistenceLandscape3D"),
 
 export default function Studio() {
   const [sample, setSample] = useState<SampleKey>("hubble");
-  // Seed with a cheap procedural field so the first frame has something to
-  // render while the Hubble JPEG decodes.
   const [field, setField] = useState<ImageField>(() => sampleRings());
   const [t, setT] = useState(0.5);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(0.25);
 
-  // Resolve the field when the chosen sample changes. Procedural samples
-  // resolve synchronously; the Hubble asset and any future remote field load
-  // asynchronously through resolveSample().
   useEffect(() => {
     let cancelled = false;
     resolveSample(sample)
@@ -50,7 +44,6 @@ export default function Studio() {
     };
   }, [sample]);
 
-  // Persistent homology — recomputed when the field changes.
   const persistence: PersistenceResult = useMemo(
     () => computePersistence(field.values, field.width, field.height),
     [field],
@@ -62,7 +55,6 @@ export default function Studio() {
     [persistence],
   );
 
-  // Animated sweep.
   const lastTs = useRef<number | null>(null);
   useEffect(() => {
     if (!playing) {
@@ -87,7 +79,6 @@ export default function Studio() {
     return () => cancelAnimationFrame(raf);
   }, [playing, speed, persistence.min, persistence.max]);
 
-  // Snap t back into [min, max] when the field changes.
   useEffect(() => {
     setT(persistence.min + (persistence.max - persistence.min) * 0.5);
     lastTs.current = null;
@@ -107,22 +98,17 @@ export default function Studio() {
     return (t - persistence.min) / span;
   }, [t, persistence.min, persistence.max]);
 
+  const aliveH0 = persistence.h0.filter((p) => p.birth <= t && t < p.death).length;
+  const aliveH1 = persistence.h1.filter((p) => p.birth <= t && t < p.death).length;
+
   return (
-    <div className="min-h-screen w-full p-6 grid grid-cols-12 gap-4">
+    <div className="w-full px-8 pb-4 grid grid-cols-12 gap-4">
       {/* Left rail */}
-      <aside className="col-span-12 lg:col-span-3 space-y-4">
-        <Panel title="persephone" subtitle="persistent homology engine">
-          <div className="text-xs text-white/55 leading-relaxed">
-            Treats the image as a discrete Morse function and watches its
-            topology evolve under the sublevel-set filtration
-            <span className="font-mono text-white/80"> {`{f ≤ t}`}</span>.
-            <span className="text-cyan-300"> Cyan</span> dots are H₀ features
-            (connected components),
-            <span className="text-fuchsia-300"> magenta</span> dots are H₁
-            features (loops, via Alexander duality).
-          </div>
+      <aside className="col-span-12 lg:col-span-3 flex flex-col gap-4">
+        <Panel className="h-[112px] justify-center">
+          <Legend />
         </Panel>
-        <Panel>
+        <Panel className="flex-1">
           <Controls
             sample={sample}
             onSample={setSample}
@@ -137,21 +123,28 @@ export default function Studio() {
             onSpeed={setSpeed}
           />
         </Panel>
-        <Panel title="invariants" subtitle="snapshot at current t">
-          <Stats persistence={persistence} t={t} field={field} />
+        <Panel className="h-[176px]" title="reference">
+          <Reference />
         </Panel>
       </aside>
 
-      {/* Center: filtration sweep + Betti curves + barcode */}
-      <main className="col-span-12 lg:col-span-6 space-y-4 flex flex-col">
+      {/* Center */}
+      <main className="col-span-12 lg:col-span-6 flex flex-col gap-4">
         <Panel
-          className="aspect-square lg:aspect-[5/4]"
-          title={`sublevel set  {f ≤ ${t.toFixed(3)}}`}
+          className="aspect-[5/4]"
+          title={
+            <span className="flex items-baseline gap-2">
+              <span>sublevel set</span>
+              <span className="font-mono text-white/45 text-[12px]">
+                {`{ f ≤ ${t.toFixed(3)} }`}
+              </span>
+            </span>
+          }
           subtitle={field.label}
         >
           <Filtration values={field.values} width={field.width} height={field.height} t={tNorm} />
         </Panel>
-        <Panel title="topology over time">
+        <Panel className="h-[136px]" title="topology over time">
           <BettiCurve
             ts={betti.ts}
             b0={betti.b0}
@@ -161,7 +154,7 @@ export default function Studio() {
             cursor={t}
           />
         </Panel>
-        <Panel className="h-72">
+        <Panel className="h-[244px]">
           <Barcode
             h0={persistence.h0}
             h1={persistence.h1}
@@ -172,9 +165,17 @@ export default function Studio() {
         </Panel>
       </main>
 
-      {/* Right rail: persistence diagram + 3D landscape */}
-      <aside className="col-span-12 lg:col-span-3 space-y-4">
-        <Panel className="h-[380px]">
+      {/* Right rail */}
+      <aside className="col-span-12 lg:col-span-3 flex flex-col gap-4">
+        <Panel className="h-[112px]">
+          <Invariants
+            aliveH0={aliveH0}
+            aliveH1={aliveH1}
+            pairs={persistence.pairs.length}
+            field={field}
+          />
+        </Panel>
+        <Panel className="aspect-[5/4]">
           <PersistenceDiagram
             h0={persistence.h0}
             h1={persistence.h1}
@@ -183,7 +184,7 @@ export default function Studio() {
             cursor={t}
           />
         </Panel>
-        <Panel className="h-[440px]" title="persistence landscape" subtitle="Bubenik 2015 · λₖ(t)">
+        <Panel className="flex-1 min-h-[260px]" title="persistence landscape" subtitle="λₖ(t) · bubenik 2015">
           <PersistenceLandscape3D
             layers={landscape.layers}
             ts={landscape.ts}
@@ -204,30 +205,35 @@ function Panel({
   className = "",
 }: {
   children: React.ReactNode;
-  title?: string;
-  subtitle?: string;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
   className?: string;
 }) {
   return (
     <section
-      className={`relative flex flex-col rounded-2xl border border-white/10 bg-[#0a0c1a]/70 backdrop-blur p-4 overflow-hidden ${className}`}
+      className={`relative flex flex-col rounded-2xl border border-white/[0.08] bg-[#0a0c1a]/65 backdrop-blur-md p-4 overflow-hidden ${className}`}
+      style={{
+        boxShadow:
+          "inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 0 rgba(0,0,0,0.4), 0 20px 50px -20px rgba(0,0,0,0.6)",
+      }}
     >
       <div
         className="absolute inset-0 pointer-events-none rounded-2xl"
         style={{
           background:
-            "radial-gradient(ellipse at top left, rgba(86,224,255,0.07), transparent 60%), radial-gradient(ellipse at bottom right, rgba(255,93,210,0.06), transparent 60%)",
+            "radial-gradient(ellipse 80% 60% at top left, rgba(86,224,255,0.05), transparent 70%)," +
+            "radial-gradient(ellipse 80% 60% at bottom right, rgba(255,93,210,0.04), transparent 70%)",
         }}
       />
       {(title || subtitle) && (
-        <header className="relative mb-2 flex items-baseline justify-between shrink-0">
+        <header className="relative mb-2.5 flex items-baseline justify-between shrink-0">
           {title && (
-            <h2 className="text-sm font-medium tracking-wide text-white/85">
+            <h2 className="text-[13px] font-medium tracking-tight text-white/90">
               {title}
             </h2>
           )}
           {subtitle && (
-            <span className="text-[10px] uppercase tracking-[0.25em] text-white/40">
+            <span className="text-[10px] uppercase tracking-[0.24em] text-white/35">
               {subtitle}
             </span>
           )}
@@ -238,45 +244,123 @@ function Panel({
   );
 }
 
-function Stats({
-  persistence,
-  t,
+function Invariants({
+  aliveH0,
+  aliveH1,
+  pairs,
   field,
 }: {
-  persistence: PersistenceResult;
-  t: number;
+  aliveH0: number;
+  aliveH1: number;
+  pairs: number;
   field: ImageField;
 }) {
-  const aliveH0 = persistence.h0.filter((p) => p.birth <= t && t < p.death).length;
-  const aliveH1 = persistence.h1.filter((p) => p.birth <= t && t < p.death).length;
   const euler = aliveH0 - aliveH1;
   return (
-    <dl className="grid grid-cols-2 gap-y-2 gap-x-3 text-xs font-mono">
-      <Stat label="β₀ (now)" value={aliveH0} accent="cyan" />
-      <Stat label="β₁ (now)" value={aliveH1} accent="magenta" />
-      <Stat label="χ = β₀ − β₁" value={euler} />
-      <Stat label="|dgm|" value={persistence.pairs.length} />
-      <Stat label="grid" value={`${field.width}×${field.height}`} />
-      <Stat label="range" value={`${persistence.min.toFixed(2)}…${persistence.max.toFixed(2)}`} />
+    <div className="grid grid-cols-3 gap-3 h-full">
+      <Metric label="β₀" value={aliveH0} accent="cyan" />
+      <Metric label="β₁" value={aliveH1} accent="magenta" />
+      <Metric label="χ" value={euler} hint="β₀ − β₁" />
+      <Metric label="pairs" value={pairs} small />
+      <Metric label="grid" value={`${field.width}×${field.height}`} small />
+      <Metric label="field" value={field.label} small truncate />
+    </div>
+  );
+}
+
+function Legend() {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <LegendRow color="#56e0ff" symbol="H₀" text="connected components" />
+      <LegendRow color="#ff5dd2" symbol="H₁" text="loops · Alexander dual" />
+      <div className="text-[10.5px] text-white/45 leading-relaxed pt-0.5">
+        Treats the image as a Morse function and tracks its topology under
+        the sublevel set{" "}
+        <span className="font-mono text-white/75">{`{f ≤ t}`}</span>.
+      </div>
+    </div>
+  );
+}
+
+function LegendRow({ color, symbol, text }: { color: string; symbol: string; text: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        className="inline-block w-2 h-2 rounded-full"
+        style={{ background: color, boxShadow: `0 0 8px ${color}80` }}
+      />
+      <span className="font-mono text-[12px]" style={{ color }}>
+        {symbol}
+      </span>
+      <span className="text-[11px] text-white/55">{text}</span>
+    </div>
+  );
+}
+
+function Reference() {
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[11px] h-full content-start">
+      <RefRow term="{f ≤ t}" def="sublevel set" />
+      <RefRow term="β₀, β₁" def="betti numbers (dim Hₖ)" />
+      <RefRow term="χ" def="β₀ − β₁ (euler char.)" />
+      <RefRow term="λₖ(t)" def="persistence landscape" />
+      <RefRow term="(b, d)" def="birth-death pair" />
+      <RefRow term="b ↗ d" def="lifetime  d − b" />
     </dl>
   );
 }
 
-function Stat({
+function RefRow({ term, def }: { term: string; def: string }) {
+  return (
+    <>
+      <dt className="font-mono text-white/80 tabular-nums">{term}</dt>
+      <dd className="text-white/45 truncate">{def}</dd>
+    </>
+  );
+}
+
+function Metric({
   label,
   value,
   accent,
+  hint,
+  small,
+  truncate,
 }: {
   label: string;
   value: number | string;
   accent?: "cyan" | "magenta";
+  hint?: string;
+  small?: boolean;
+  truncate?: boolean;
 }) {
   const color =
-    accent === "cyan" ? "text-cyan-300" : accent === "magenta" ? "text-fuchsia-300" : "text-white/85";
+    accent === "cyan"
+      ? "text-cyan-300"
+      : accent === "magenta"
+      ? "text-fuchsia-300"
+      : "text-white/90";
   return (
-    <>
-      <dt className="text-white/40">{label}</dt>
-      <dd className={`text-right ${color}`}>{value}</dd>
-    </>
+    <div className="flex flex-col justify-center min-w-0">
+      <div className="text-[9.5px] tracking-[0.24em] uppercase text-white/35 flex items-baseline gap-1.5">
+        <span>{label}</span>
+        {hint && (
+          <span className="text-white/25 normal-case tracking-normal font-mono text-[9px]">
+            {hint}
+          </span>
+        )}
+      </div>
+      <div
+        className={[
+          small ? "text-[13px]" : "text-[20px]",
+          "font-mono tabular-nums leading-tight mt-0.5",
+          truncate ? "truncate" : "",
+          color,
+        ].join(" ")}
+        title={typeof value === "string" ? value : undefined}
+      >
+        {value}
+      </div>
+    </div>
   );
 }

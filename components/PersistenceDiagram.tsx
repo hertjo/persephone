@@ -49,17 +49,20 @@ export default function PersistenceDiagram({ h0, h1, min, max, cursor }: Props) 
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/40">
-        <span>persistence diagram</span>
-        <span className="font-mono text-white/60">
+      <div className="flex items-center justify-between shrink-0">
+        <span className="text-[13px] font-medium tracking-tight text-white/90">
+          persistence diagram
+        </span>
+        <span className="font-mono text-[11px] tabular-nums">
           <span style={{ color: ACCENT_H0 }}>β₀={aliveH0}</span>
-          <span className="px-2 text-white/20">·</span>
+          <span className="px-1.5 text-white/20">·</span>
           <span style={{ color: ACCENT_H1 }}>β₁={aliveH1}</span>
         </span>
       </div>
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}
-        className="w-full flex-1 mt-2"
+        className="w-full flex-1 mt-1 min-h-0"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="persistence diagram"
       >

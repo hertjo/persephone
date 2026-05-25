@@ -13,20 +13,17 @@ export default function Page() {
 
 function Header() {
   return (
-    <header className="relative px-6 pt-6 pb-2 flex items-baseline gap-4">
-      <div className="flex items-center gap-3">
+    <header className="relative px-8 pt-7 pb-4 flex items-center">
+      <div className="flex items-center gap-3.5">
         <Sigil />
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            persephone
+        <div className="leading-tight">
+          <h1 className="text-[17px] font-semibold tracking-[-0.01em] text-white">
+            Persephone
           </h1>
-          <p className="text-[11px] uppercase tracking-[0.32em] text-white/40">
+          <p className="text-[10.5px] tracking-[0.32em] uppercase text-white/35 mt-0.5">
             persistent homology of image manifolds
           </p>
         </div>
-      </div>
-      <div className="ml-auto text-[10px] uppercase tracking-[0.3em] text-white/30 hidden md:block">
-        topological vision · v0.1
       </div>
     </header>
   );
@@ -75,9 +72,8 @@ function Backdrop() {
 
 function Footer() {
   return (
-    <footer className="relative px-6 pb-6 pt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-white/30">
-      <span>cubical complex · sublevel filtration · Alexander duality</span>
-      <span>edelsbrunner & harer · bubenik · carlsson</span>
+    <footer className="relative px-8 pb-6 pt-1 text-[10px] tracking-[0.32em] uppercase text-white/25 text-center">
+      cubical complex · sublevel filtration · alexander duality
     </footer>
   );
 }
