@@ -38,3 +38,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# LaTeX build artifacts (PDF is checked in; logs/aux are not)
+latex/*.log
+latex/*.aux
+latex/*.out
+latex/*.toc
+latex/*.synctex.gz
