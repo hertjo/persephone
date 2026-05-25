@@ -227,6 +227,12 @@ export const SAMPLES: Record<string, SampleSpec> = {
     subtitle: "deepest view of the universe",
     url: "/hubble-xdf.jpg",
   },
+  poincare: {
+    kind: "asset",
+    label: "Poincaré",
+    subtitle: "founder of algebraic topology",
+    url: "/poincare.png",
+  },
   blobs: {
     kind: "procedural",
     label: "Blobs",
