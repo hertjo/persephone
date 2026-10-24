@@ -43,19 +43,27 @@ npm start
 ## The algorithm
 
 1. **Sublevel filtration.** The pixels are sorted by value (ties broken by index). Adding them in this order builds the
-   filtration `X_t = {f ≤ t}` on the 4-connected pixel grid.
+   filtration `X_t = {f ≤ t}`, in which pixels are joined by 4-adjacency (shared edges).
 2. **`H₀` by union-find with the elder rule.** Each new pixel either starts a component or joins the components of its
-   neighbours that are already present. When two components meet, the younger one (the one with the higher minimum)
+   4-neighbours that are already present. When two components meet, the younger one (the one with the higher minimum)
    dies at the current value. This gives a pair `(birth, death)`, and the global minimum is the one class that never
    dies.
 3. **`H₁` by Alexander duality.** On the sphere `S² = ℝ² ∪ {∞}`, the holes of `{f ≤ t}` correspond to the bounded
-   components of `{f > t}`. The same union-find sweep therefore runs again in descending order over the superlevel sets,
-   and each pair it produces is read back as a hole of the sublevel filtration with birth and death swapped.
+   components of `{f > t}`. On a pixel grid this duality is exact only for complementary connectivities, so the
+   complement is read with 8-adjacency (shared edges or corners): two sublevel pixels that touch only at a corner do not
+   close a loop, and the complement leaks through that gap. The same union-find sweep therefore runs again in
+   descending order with 8-adjacency, plus one virtual node for the region outside the image that touches every border
+   pixel and is older than every pixel. A superlevel component that appears at its maximum `b` and dies at `d`, when it
+   merges with an older component or reaches the border, is a hole of the sublevel filtration alive on `[d, b)`. The
+   outside node never dies and is not a hole.
 4. **Summaries.** The Betti curves and the persistence landscape are evaluated from the pairs on a uniform grid of
    threshold values.
 
 After the initial `O(N log N)` sort, both sweeps run in `O(N α(N))` time, where `N` is the number of pixels and `α` is the
 inverse Ackermann function (union-find with path compression and union by rank).
+
+`npm test` checks both diagrams and the Betti curves against a brute-force reference that labels the components and
+holes of every sublevel set directly, on hand-made diagonal cases and a few hundred random small images.
 
 The [mathematical companion](./public/persephone-math.pdf) (14 pages) states the construction and gives full proofs. Its
 LaTeX source is [`latex/persephone-math.tex`](./latex/persephone-math.tex).
