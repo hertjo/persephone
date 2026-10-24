@@ -120,30 +120,32 @@ An \emph{elementary interval} is a subset of $\R$ of the form $[k,k]$ (a point, 
 \end{definition}
 
 \begin{definition}[Cubical complex of the pixel grid]\label{def:cubcomp}
-Let $\Omega = \{0,\dots,w{-}1\}\times\{0,\dots,h{-}1\}$. The cubical complex $\X$ associated to $\Omega$ has
+Let $\Omega = \{0,\dots,w{-}1\}\times\{0,\dots,h{-}1\}$. The cubical complex $\X$ associated to $\Omega$ places one vertex at every pixel centre:
 \begin{itemize}[leftmargin=2em,itemsep=0.2em]
-  \item \emph{$2$-cells (pixels):} squares $[i,i{+}1]\times[j,j{+}1]$, one for each $(i,j)\in\Omega$;
-  \item \emph{$1$-cells (edges):} unit segments shared between two adjacent pixels, $[i,i{+}1]\times\{j\}$ and $\{i\}\times[j,j{+}1]$;
-  \item \emph{$0$-cells (vertices):} corner points $(i,j)$ with $0\leq i\leq w,\ 0\leq j\leq h$.
+  \item \emph{$0$-cells (vertices):} the points $p=(i,j)\in\Omega$, one per pixel;
+  \item \emph{$1$-cells (edges):} the unit segments $[i,i{+}1]\times\{j\}$ and $\{i\}\times[j,j{+}1]$ joining two $4$-adjacent pixels;
+  \item \emph{$2$-cells (squares):} the unit squares $[i,i{+}1]\times[j,j{+}1]$ whose four corners are pixels.
 \end{itemize}
-The geometric realization $|\X|$ is the rectangle $[0,w]\times[0,h]\subset\R^2$.
+The geometric realization $|\X|$ is the rectangle $R:=[0,w{-}1]\times[0,h{-}1]\subset\R^2$.
 \end{definition}
 
-\paragraph{The $V$-construction.} The filtration value of a cell must be compatible with the function $f$ on pixels. We use the \emph{$V$-construction} (cf.\ \cite{WCV12}): every cell $\sigma$ is assigned
+\paragraph{The $V$-construction.} The filtration value of a cell must be compatible with the function $f$ on pixels. We use the \emph{$V$-construction} (cf.\ \cite{WCV12}), in which pixels are vertices: every cell $\sigma$ is assigned
 \[
-F(\sigma) \;:=\; \max \{ f(p) : p \in\Omega,\ \sigma\subseteq \overline{p}\},
+F(\sigma) \;:=\; \max \{ f(p) : p\in\Omega \text{ a vertex of } \sigma\}.
 \]
-where $\overline{p}$ denotes the closed pixel square at $p$. Concretely: a $2$-cell $\overline{p}$ has $F(\overline{p})=f(p)$; an edge between pixels $p$ and $q$ has $F=\max(f(p),f(q))$; a vertex shared by up to four pixels takes the maximum over those pixels.
+Concretely: a vertex $p$ has $F(p)=f(p)$; an edge between $4$-adjacent pixels $p$ and $q$ has $F=\max(f(p),f(q))$; a square takes the maximum over its four corner pixels.
 
 \begin{lemma}[Cubical sublevel filtration]\label{lem:cubsublev}
-Define
-\[
-\X_t \;:=\; \bigcup_{p\in\Omega,\,f(p)\leq t}\ \overline{p}\quad\text{(as a subcomplex of $\X$, including all faces of the listed pixels).}
-\]
-Then $\{\X_t\}_{t\in\R}$ is a monotone family of cubical subcomplexes (each $\X_t$ closed under faces, and $s\leq t\Rightarrow\X_s\subseteq\X_t$). Its set of $2$-cells equals $\{\overline{p}:p\in\sublevL{\Omega}{t}\}$.
-
-The $V$-construction $\X_t = \{\sigma\in\X : F(\sigma)\leq t\}$ coincides with the union above: every cell $\sigma$ in the union lies inside some closed pixel $\overline{p}$ with $f(p)\leq t$, so $F(\sigma)\leq t$; conversely, the maximizer in the definition of $F(\sigma)$ certifies $\sigma\subseteq\overline{p}$ for some $p$ with $f(p)\leq t$.
+Define $\X_t := \{\sigma\in\X : F(\sigma)\leq t\}$. Then $\{\X_t\}_{t\in\R}$ is a monotone family of cubical subcomplexes (each $\X_t$ closed under faces, and $s\leq t\Rightarrow\X_s\subseteq\X_t$). Concretely, $\X_t$ is the full subcomplex spanned by $\sublevL{\Omega}{t}$: its vertices are the pixels with $f\leq t$, its edges join $4$-adjacent such pixels, and its squares are the unit squares whose four corners all have $f\leq t$.
 \end{lemma}
+
+\begin{proof}
+The vertices of a face of $\sigma$ are vertices of $\sigma$, so $F(\tau)\leq F(\sigma)$ whenever $\tau\subseteq\sigma$; hence $\X_t$ is closed under faces. Monotonicity is immediate. Finally $F(\sigma)\leq t$ iff every vertex of $\sigma$ lies in $\sublevL{\Omega}{t}$, which is the description of the full subcomplex.
+\end{proof}
+
+\begin{remark}[Connectivity convention]\label{rem:connectivity}
+In $\X_t$ two pixels that touch only diagonally are \emph{not} joined: the diagonal of a unit square is not a cell, and the square itself enters only when all four corners do. Components of $\X_t$ are therefore the $4$-connected components of $\sublevL{\Omega}{t}$, and (Prop.\ \ref{prop:H1superlevel}) the complement $\R^2\setminus\X_t$ is organised by $8$-adjacency. This $4/8$ pair is the complementary one for which Alexander duality is exact on the pixel grid. The other common model, the $T$-construction, takes pixels as closed unit squares and the union of the sublevel squares; there two diagonal pixels meet at a corner, which gives the opposite $8/4$ convention. Persephone uses the $V$-construction throughout.
+\end{remark}
 
 \noindent
 We henceforth use Lemma \ref{lem:cubsublev} as the definition of the sublevel-set cubical filtration, and conflate ``the cubical sublevel set at $t$'' with $\X_t$.
@@ -161,11 +163,11 @@ If $f$ is generic, the filtration $\{\X_t\}_{t\in\R}$ takes finitely many distin
 \[
 \emptyset \;=\; K_0 \;\subsetneq\; K_1 \;\subsetneq\; \dots \;\subsetneq\; K_N \;=\; \X, \qquad N = wh,
 \]
-where $K_k = \X_{f(p_k)}$ and $p_1,\dots,p_N$ enumerate $\Omega$ in increasing order of $f$. Each step $K_{k-1}\subsetneq K_k$ adds the pixel $\overline{p_k}$ together with those of its faces that are not yet in $K_{k-1}$; the added cells form the \emph{lower star} of $p_k$ in the $V$-construction.
+where $K_k = \X_{f(p_k)}$ and $p_1,\dots,p_N$ enumerate $\Omega$ in increasing order of $f$. Each step $K_{k-1}\subsetneq K_k$ adds the vertex $p_k$ together with the edges and squares that have $p_k$ as a vertex and all of whose other vertices are already in $K_{k-1}$; the added cells form the \emph{lower star} of $p_k$ in the $V$-construction.
 \end{proposition}
 
 \begin{proof}
-By Lemma \ref{lem:cubsublev}, $\X_t$ depends on $t$ only through the set $\sublevL{\Omega}{t}$; this set changes exactly at the values $f(p_1)<\dots<f(p_N)$. Between consecutive values $f(p_{k-1})$ and $f(p_k)$ no pixel enters, and the pixel set is fixed at $\{p_1,\dots,p_{k-1}\}$. At $t=f(p_k)$ the pixel $p_k$ is added; the cells $\sigma$ newly entering $\X_t$ are exactly those with $\sigma\subseteq\overline{p_k}$ but $\sigma\not\subseteq\overline{p_j}$ for any $j<k$. This is the lower star of $p_k$.
+By Lemma \ref{lem:cubsublev}, $\X_t$ depends on $t$ only through the set $\sublevL{\Omega}{t}$; this set changes exactly at the values $f(p_1)<\dots<f(p_N)$. Between consecutive values $f(p_{k-1})$ and $f(p_k)$ no pixel enters, and the pixel set is fixed at $\{p_1,\dots,p_{k-1}\}$. At $t=f(p_k)$ the pixel $p_k$ is added; the cells $\sigma$ newly entering $\X_t$ are exactly those with $p_k$ as a vertex and all other vertices among $p_1,\dots,p_{k-1}$. This is the lower star of $p_k$.
 \end{proof}
 
 \noindent
@@ -400,7 +402,7 @@ For a sublevel-set filtration $\{\X_t\}$ of the cubical pixel grid with generic 
 \end{theorem}
 
 \begin{proof}
-By Lemma \ref{lem:cubsublev} the cubical sublevel set $\X_t$ deformation-retracts to the pixel graph $G_t = (\sublevL{\Omega}{t},E_t)$, where $E_t$ is the set of $4$-adjacencies between pixels of $\sublevL{\Omega}{t}$. Indeed, every pixel contracts to its centre, and every shared edge contracts to a segment connecting the two adjacent centres; vertices (corners) deformation-retract onto the union of incident pixel-centres and segments. Hence $\Hk{0}(\X_t)\cong\Hk{0}(G_t)$ for all $t$, and the persistence modules are isomorphic.
+By Lemma \ref{lem:cubsublev} the $1$-skeleton of the cubical sublevel set $\X_t$ is the pixel graph $G_t = (\sublevL{\Omega}{t},E_t)$, where $E_t$ is the set of $4$-adjacencies between pixels of $\sublevL{\Omega}{t}$. The $0$-th homology of a cell complex depends only on its $1$-skeleton (attaching $2$-cells adds no vertices and does not change which vertices are joined by paths), so $\Hk{0}(\X_t)\cong\Hk{0}(G_t)$ for all $t$, naturally in $t$, and the persistence modules are isomorphic.
 
 It therefore suffices to verify that Algorithm \ref{alg:H0} computes $\PD(\Hk{0}(G_\bullet))$. We induct on the number of pixels processed. Let $G^{(k)}$ denote the graph after step $k$ of the loop.
 
@@ -446,7 +448,7 @@ We need the case $n=2,\ k=0$. Compactify the plane to $S^2 = \R^2\cup\{\infty\}$
 \]
 
 \begin{proposition}[$H_1$ via bounded complement components]\label{prop:H1bounded}
-For a cubical sublevel set $\X_t\subset[0,w]\times[0,h]\subset\R^2$,
+For a cubical sublevel set $\X_t\subset R\subset\R^2$,
 \[
 \beta_1(\X_t) \;=\; \#\bigl\{\text{bounded connected components of }\R^2\setminus\X_t\bigr\}.
 \]
@@ -461,18 +463,28 @@ and $\widetilde{H}_0(S^2\setminus\X_t) = \#\text{bounded components}$. By Theore
 \end{proof}
 
 \begin{proposition}[$H_1$ via superlevel pixel components]\label{prop:H1superlevel}
-Let $\widetilde{G}_t = (\sublevG{\Omega}{t}, E^*_t)$ denote the superlevel pixel graph with $8$-adjacency (two pixels share an edge in $E^*_t$ iff they are king-move neighbours and both have value $>t$). Then
+Let $\widetilde{G}_t$ be the graph whose vertices are the superlevel pixels $\sublevG{\Omega}{t}$ together with one extra vertex $\infty$, with an edge between two superlevel pixels iff they are $8$-adjacent (king-move neighbours), and an edge between $\infty$ and every superlevel pixel on the border of $\Omega$. Then the components of $\R^2\setminus\X_t$ correspond bijectively to the components of $\widetilde{G}_t$, the unbounded one to the component of $\infty$, so
 \[
-\beta_1(\X_t) \;=\; \#\bigl\{\text{components of }\widetilde{G}_t\bigr\} \;-\; (\text{$1$ if $\widetilde{G}_t$ touches the boundary of }\Omega,\text{ else }0).
+\beta_1(\X_t) \;=\; \#\bigl\{\text{components of }\widetilde{G}_t\bigr\} - 1 \;=\; \#\bigl\{\text{$8$-components of }\sublevG{\Omega}{t}\text{ without border pixels}\bigr\}.
 \]
 \end{proposition}
 
 \begin{proof}
-By Prop.\ \ref{prop:H1bounded}, $\beta_1(\X_t)$ equals the number of bounded components of $\R^2\setminus\X_t$. The open set $\R^2\setminus\X_t$ deformation-retracts onto the dual graph whose vertices are superlevel pixel centres and whose edges include all king-move adjacencies (because diagonally-adjacent superlevel pixels meet only at a vertex of $\X_t$, and that vertex is in $\X_t$ iff all four surrounding pixels have $f\leq t$; equivalently, the diagonal pair of superlevel pixels is \emph{not} blocked). The unbounded component is the one that touches the outer boundary of $\Omega$ (if any).
+Let $Q$ be a closed unit square of the grid with corners $a,b,c,d\in\Omega$. By Lemma \ref{lem:cubsublev}, $Q\cap\X_t$ is all of $Q$ if the four corners are sublevel; otherwise it is the set of sublevel corners together with the sides of $Q$ whose two endpoints are sublevel. Running through the cases (one, two adjacent, two diagonal or three sublevel corners), $Q\setminus\X_t$ is then nonempty and path-connected, and it contains every superlevel corner of $Q$. Two superlevel pixels lie in a common unit square iff they are $8$-adjacent, so $8$-adjacent superlevel pixels lie in the same component of $R\setminus\X_t$. Conversely, every point of $R\setminus\X_t$ lies in some $Q\setminus\X_t$ and is joined there to a superlevel corner, and a path in $R\setminus\X_t$ can only pass from one unit square to the next through a point of a shared side that is not in $\X_t$, that is, a side with a superlevel endpoint, which is a corner of both squares. Hence the components of $R\setminus\X_t$ are the $8$-components of $\sublevG{\Omega}{t}$.
+
+The region $\R^2\setminus R$ is connected and unbounded. It meets the closure of a component of $R\setminus\X_t$ exactly when that component reaches a point of $\bnd R$ outside $\X_t$; such a point lies on a border side with a superlevel endpoint, which is a border pixel. Gluing $\R^2\setminus R$ to the components that contain a border pixel is what the vertex $\infty$ does in $\widetilde{G}_t$. The bounded components of $\R^2\setminus\X_t$ are the remaining ones, and Prop.\ \ref{prop:H1bounded} gives the formula.
 \end{proof}
 
-\paragraph{Algorithmic compromise.}
-Persephone uses $4$-adjacency for both the sublevel sweep (computing $\Hk{0}$, exactly correct by the proof of Thm.~\ref{thm:elder}) and the descending sweep over the superlevel set. The descending $4$-adjacency sweep computes the number of components of $\widetilde{G}_t^{(4)}$ (the $4$-adjacency superlevel graph), which can over-count components in diagonal configurations relative to the strict $8$-adjacency dual required by Prop.\ \ref{prop:H1superlevel}. For \emph{generic} $f$ where diagonal-only adjacencies between superlevel pixels are absent (or rare), the discrepancy vanishes; for natural photographic input this means the displayed $\Hk{1}$ diagram agrees with the strict mathematical object on all but a measure-zero set of threshold values. The studio therefore renders an asymptotically faithful $\Hk{1}$ diagram, with the understanding that this is the standard $4$-connectivity TDA convention used in libraries such as Gudhi \cite{GudhiCubical} and Dionysus.
+\paragraph{The $H_1$ sweep.}
+Prop.\ \ref{prop:H1superlevel} reduces $H_1$ to $H_0$ of the graphs $\widetilde{G}_t$, which grow as $t$ \emph{decreases}. Persephone therefore runs Algorithm \ref{alg:H0} a second time, with three changes:
+\begin{enumerate}[leftmargin=2em,itemsep=0.2em]
+  \item pixels are processed in \emph{descending} order of $f$ (the reverse of the tie-broken ascending order), and each new pixel is joined to its already active \emph{$8$-neighbours};
+  \item the vertex $\infty$ is active from the start and is joined to every border pixel when that pixel enters;
+  \item the elder of two classes is the one whose birth pixel was processed \emph{first} in the sweep, with $\infty$ older than every pixel. In the descending sweep this is the class with the \emph{larger} birth value; keeping the class with the smaller value, as in the ascending sweep, would kill the wrong one.
+\end{enumerate}
+With these changes the proof of Theorem \ref{thm:elder}, applied to $-f$ on the graphs $\widetilde{G}_t$, shows that the sweep outputs the $H_0$ diagram of the superlevel filtration. The class of $\infty$ never dies and is discarded; it is the unbounded complement component, not a hole. Every other class is born at a local maximum $b$ and dies at the value $d<b$ at which it merges with an older class or reaches the border. It is a bounded component of $\R^2\setminus\X_t$ exactly for $t\in[d,b)$, so it is reported as the $H_1$ pair $(d,b)$ of the sublevel filtration. Alexander duality is natural with respect to inclusions, so the maps $\Hk{1}(\X_s)\to\Hk{1}(\X_t)$ are dual to the maps on reduced $H_0$ of the complements; the ranks of the two persistence modules therefore agree and the diagrams coincide, not only the Betti numbers. Both sweeps run in $O(N\,\alpha(N))$ after the sort.
+
+Using $4$-adjacency in this sweep as well would be incorrect, and not only on rare inputs: two superlevel pixels that touch diagonally would count as separate holes although the complement connects them through the corner (a diagonal ring of sublevel pixels, or a $2\times2$ checkerboard, would report holes that do not exist), and every peak that reaches the border would count as a hole without the vertex $\infty$. The repository's test suite compares both diagrams with a brute-force computation of the components and holes of every sublevel set, on hand-made diagonal cases and on random images.
 
 % ============================================================
 \section{Persistence landscapes}
