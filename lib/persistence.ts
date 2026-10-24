@@ -6,9 +6,16 @@
  *   union-find with the elder rule (Edelsbrunner & Harer, 2010).
  *
  *   H₁ of the sublevel filtration is recovered through Alexander duality:
- *   on the 2-sphere compactification, H₁({f ≤ t}) ≅ H̃₀({f > t}).
+ *   on the 2-sphere compactification, H₁({f ≤ t}) ≅ H̃₀({f > t} ∪ {∞}).
  *   Concretely, we run the same union-find in the descending direction over
  *   pixels and re-interpret births/deaths in the original (ascending) frame.
+ *
+ *   Connectivity: sublevel sets use 4-adjacency, their complements (the
+ *   superlevel sweep) use 8-adjacency. This is the complementary pair for
+ *   which duality holds exactly on the pixel grid, so two pixels that touch
+ *   only at a corner neither join a component nor close a loop. The region
+ *   outside the image is a single virtual superlevel node touching every
+ *   border pixel, so only bounded complement components count as holes.
  */
 
 export type Pair = {
@@ -30,28 +37,43 @@ export type PersistenceResult = {
   height: number;
 };
 
-const NEIGHBOR_OFFSETS_4 = [-1, 1] as const;
+/**
+ * Sweep the pixel grid in the given order with union-find and the elder rule,
+ * recording a (birth, death) pair whenever two components merge.
+ *
+ * `eight` selects 8-adjacency instead of 4-adjacency. `outside` adds a virtual
+ * node (index n) for the region beyond the image: it is present from the start,
+ * is older than every pixel, and touches every border pixel, so a component
+ * dies as soon as it reaches the image border.
+ *
+ * The elder of two components is the one whose birth pixel came first in
+ * `order`, so the same code is correct for ascending and descending sweeps.
+ */
+function sweep(
+  values: Float32Array,
+  w: number,
+  h: number,
+  order: Int32Array,
+  eight: boolean,
+  outside: boolean,
+): { pairs: Array<Omit<Pair, "dim" | "lifetime">>; essentialBirthIdx: number } {
+  const n = values.length;
+  const size = outside ? n + 1 : n;
+  const parent = new Int32Array(size);
+  const rank = new Uint8Array(size);
+  const birthSite = new Int32Array(size);
+  const active = new Uint8Array(size);
+  // pos[p] = position of pixel p in the sweep; the outside node is eldest.
+  const pos = new Int32Array(size);
+  for (let i = 0; i < size; i++) parent[i] = i;
+  for (let k = 0; k < n; k++) pos[order[k]] = k;
+  if (outside) {
+    pos[n] = -1;
+    birthSite[n] = n;
+    active[n] = 1;
+  }
 
-function neighborsOf(p: number, w: number, h: number, out: number[]): number {
-  const x = p % w;
-  const y = (p - x) / w;
-  let n = 0;
-  if (x > 0) out[n++] = p - 1;
-  if (x < w - 1) out[n++] = p + 1;
-  if (y > 0) out[n++] = p - w;
-  if (y < h - 1) out[n++] = p + w;
-  return n;
-  void NEIGHBOR_OFFSETS_4;
-}
-
-function makeUnionFind(n: number) {
-  const parent = new Int32Array(n);
-  const rank = new Uint8Array(n);
-  const birthSite = new Int32Array(n);
-  const active = new Uint8Array(n);
-  for (let i = 0; i < n; i++) parent[i] = i;
-
-  function find(x: number): number {
+  const find = (x: number): number => {
     let r = x;
     while (parent[r] !== r) r = parent[r];
     while (parent[x] !== r) {
@@ -60,61 +82,48 @@ function makeUnionFind(n: number) {
       x = next;
     }
     return r;
-  }
+  };
 
-  return { parent, rank, birthSite, active, find };
-}
-
-/**
- * Sweep the pixel grid in a given order, building up the sublevel set,
- * recording H₀ births and deaths under the elder rule.
- *
- * If `descending` is true the same procedure runs on the superlevel set,
- * producing the dual diagram that, by Alexander duality, encodes H_1.
- */
-function sweepH0(
-  values: Float32Array,
-  w: number,
-  h: number,
-  order: Int32Array,
-): { pairs: Array<Omit<Pair, "dim" | "lifetime">>; essentialBirthIdx: number } {
-  const n = values.length;
-  const uf = makeUnionFind(n);
   const pairs: Array<Omit<Pair, "dim" | "lifetime">> = [];
-  const nbrBuf: number[] = [0, 0, 0, 0];
-  let essentialBirthIdx = order[0];
+  const nbr = new Int32Array(9);
 
   for (let k = 0; k < n; k++) {
     const p = order[k];
-    uf.active[p] = 1;
-    uf.birthSite[p] = p;
+    active[p] = 1;
+    birthSite[p] = p;
     const v = values[p];
 
-    const nNbr = neighborsOf(p, w, h, nbrBuf);
+    const x = p % w;
+    const y = (p - x) / w;
+    const l = x > 0;
+    const r = x < w - 1;
+    const u = y > 0;
+    const d = y < h - 1;
+    let m = 0;
+    if (l) nbr[m++] = p - 1;
+    if (r) nbr[m++] = p + 1;
+    if (u) nbr[m++] = p - w;
+    if (d) nbr[m++] = p + w;
+    if (eight) {
+      if (u && l) nbr[m++] = p - w - 1;
+      if (u && r) nbr[m++] = p - w + 1;
+      if (d && l) nbr[m++] = p + w - 1;
+      if (d && r) nbr[m++] = p + w + 1;
+    }
+    if (outside && !(l && r && u && d)) nbr[m++] = n;
+
     let myRoot = p;
-    for (let i = 0; i < nNbr; i++) {
-      const q = nbrBuf[i];
-      if (!uf.active[q]) continue;
-      const qRoot = uf.find(q);
+    for (let i = 0; i < m; i++) {
+      const q = nbr[i];
+      if (!active[q]) continue;
+      const qRoot = find(q);
       if (qRoot === myRoot) continue;
 
-      const myBirthIdx = uf.birthSite[myRoot];
-      const qBirthIdx = uf.birthSite[qRoot];
-      const myBirthVal = values[myBirthIdx];
-      const qBirthVal = values[qBirthIdx];
-
-      let survivor: number;
-      let dying: number;
-      let dyingBirthIdx: number;
-      if (myBirthVal < qBirthVal || (myBirthVal === qBirthVal && myBirthIdx < qBirthIdx)) {
-        survivor = myRoot;
-        dying = qRoot;
-        dyingBirthIdx = qBirthIdx;
-      } else {
-        survivor = qRoot;
-        dying = myRoot;
-        dyingBirthIdx = myBirthIdx;
-      }
+      const myBirthIdx = birthSite[myRoot];
+      const qBirthIdx = birthSite[qRoot];
+      const myIsElder = pos[myBirthIdx] < pos[qBirthIdx];
+      const survivorBirthIdx = myIsElder ? myBirthIdx : qBirthIdx;
+      const dyingBirthIdx = myIsElder ? qBirthIdx : myBirthIdx;
 
       pairs.push({
         birth: values[dyingBirthIdx],
@@ -123,28 +132,25 @@ function sweepH0(
         deathIdx: p,
       });
 
-      // Union by rank.
-      if (uf.rank[survivor] < uf.rank[dying]) {
-        uf.parent[survivor] = dying;
-        uf.birthSite[dying] = uf.birthSite[survivor];
-        myRoot = dying;
+      // Union by rank; the new root carries the elder's birth site.
+      let root: number;
+      let child: number;
+      if (rank[myRoot] < rank[qRoot]) {
+        root = qRoot;
+        child = myRoot;
       } else {
-        uf.parent[dying] = survivor;
-        if (uf.rank[survivor] === uf.rank[dying]) uf.rank[survivor]++;
-        myRoot = survivor;
+        root = myRoot;
+        child = qRoot;
+        if (rank[myRoot] === rank[qRoot]) rank[myRoot]++;
       }
+      parent[child] = root;
+      birthSite[root] = survivorBirthIdx;
+      myRoot = root;
     }
   }
 
-  // The remaining essential class.
-  for (let i = 0; i < n; i++) {
-    if (uf.parent[i] === i && uf.active[i]) {
-      essentialBirthIdx = uf.birthSite[i];
-      break;
-    }
-  }
-
-  return { pairs, essentialBirthIdx };
+  // Without the outside node exactly one class never dies: the one born first.
+  return { pairs, essentialBirthIdx: order[0] };
 }
 
 export function computePersistence(
@@ -179,7 +185,8 @@ export function computePersistence(
   });
   const ascSorted = Int32Array.from(ascArr);
 
-  const sub = sweepH0(values, width, height, ascSorted);
+  // H₀: 4-connected sublevel sets.
+  const sub = sweep(values, width, height, ascSorted, false, false);
 
   const h0: Pair[] = sub.pairs.map((p) => ({
     ...p,
@@ -195,16 +202,18 @@ export function computePersistence(
     dim: 0,
   });
 
-  // Descending order for superlevel H₀ ≅ H₁ of sublevel (Alexander duality).
-  const descArr = ascArr.slice().reverse();
-  const descSorted = Int32Array.from(descArr);
-  const sup = sweepH0(values, width, height, descSorted);
+  // H₁ by Alexander duality. The holes of the 4-connected sublevel set
+  // {f ≤ t} are the bounded 8-connected components of its complement {f > t}
+  // (4- and 8-adjacency are the dual pair on the pixel grid). Sweeping in
+  // descending order with 8-adjacency, and with a virtual node for the
+  // unbounded region outside the image, gives one pair per bounded
+  // superlevel component: it appears at its maximum b and dies at the value
+  // d where it merges with an older component or reaches the border. In the
+  // sublevel frame that is a hole alive on [d, b). The outside node itself
+  // never dies and is not a hole.
+  const descSorted = ascSorted.slice().reverse();
+  const sup = sweep(values, width, height, descSorted, true, true);
 
-  // Re-express each (b, d) from the superlevel sweep as a sublevel H₁ pair:
-  // the hole is "born" when the superlevel component first separates (at the
-  // larger value = the saddle / death in the descending sweep) and "dies"
-  // when the surrounding region fills in (at the smaller value = birth in
-  // the descending sweep). We drop the global essential class.
   const h1: Pair[] = sup.pairs.map((p) => ({
     birth: p.death,
     death: p.birth,
@@ -234,7 +243,8 @@ export function computePersistence(
 
 /**
  * Betti numbers β₀(t), β₁(t) sampled on a uniform grid of filtration values.
- * A pair (b, d) contributes +1 to β_k on [b, d).
+ * A pair (b, d) contributes +1 to β_k on [b, d). The essential H₀ class
+ * (deathIdx = -1) is plotted with death = max but never dies.
  */
 export function bettiCurves(
   result: PersistenceResult,
@@ -249,8 +259,9 @@ export function bettiCurves(
     ts[i] = min + (i / (samples - 1)) * span;
   }
   for (const p of h0) {
+    const essential = p.deathIdx === -1;
     for (let i = 0; i < samples; i++) {
-      if (ts[i] >= p.birth && ts[i] < p.death) b0[i]++;
+      if (ts[i] >= p.birth && (essential || ts[i] < p.death)) b0[i]++;
     }
   }
   for (const p of h1) {
