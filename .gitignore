@@ -39,7 +39,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# LaTeX build artifacts (PDF is checked in; logs/aux are not)
+# LaTeX build artifacts (the companion PDF is checked in under public/)
+latex/*.pdf
 latex/*.log
 latex/*.aux
 latex/*.out
