@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 type Props = {
@@ -165,16 +165,24 @@ function CursorPlane({ cursor, min, max }: Pick<Props, "cursor" | "min" | "max">
   );
 }
 
+// Fixed star field from a seeded generator, so rendering stays pure.
+const STAR_POSITIONS = (() => {
+  let seed = 0x9e3779b9;
+  const rand = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const positions = new Float32Array(400 * 3);
+  for (let i = 0; i < 400; i++) {
+    positions[i * 3] = (rand() - 0.5) * 40;
+    positions[i * 3 + 1] = (rand() - 0.5) * 20;
+    positions[i * 3 + 2] = (rand() - 0.5) * 40 - 5;
+  }
+  return positions;
+})();
+
 function Stars() {
-  const points = useMemo(() => {
-    const positions = new Float32Array(400 * 3);
-    for (let i = 0; i < 400; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 40;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 40 - 5;
-    }
-    return positions;
-  }, []);
+  const points = STAR_POSITIONS;
   return (
     <points>
       <bufferGeometry>
@@ -186,14 +194,16 @@ function Stars() {
 }
 
 function ResizeKick() {
-  const { gl, camera, size } = useThree();
-  useMemo(() => {
+  const size = useThree((state) => state.size);
+  const get = useThree((state) => state.get);
+  useLayoutEffect(() => {
+    const { gl, camera } = get();
     gl.setSize(size.width, size.height, false);
-    if ("aspect" in camera) {
-      (camera as THREE.PerspectiveCamera).aspect = size.width / size.height;
-      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+    if (camera instanceof THREE.PerspectiveCamera) {
+      camera.aspect = size.width / size.height;
+      camera.updateProjectionMatrix();
     }
-  }, [gl, camera, size.width, size.height]);
+  }, [get, size.width, size.height]);
   return null;
 }
 

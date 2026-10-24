@@ -55,12 +55,19 @@ export default function Studio() {
     [persistence],
   );
 
+  // Recentre t when a new field changes the filtration range (state adjusted
+  // during render, as React recommends instead of a setState effect).
+  const [range, setRange] = useState<{ min: number; max: number } | null>(null);
+  if (range === null || range.min !== persistence.min || range.max !== persistence.max) {
+    setRange({ min: persistence.min, max: persistence.max });
+    setT(persistence.min + (persistence.max - persistence.min) * 0.5);
+  }
+
   const lastTs = useRef<number | null>(null);
   useEffect(() => {
-    if (!playing) {
-      lastTs.current = null;
-      return;
-    }
+    // Restart the clock whenever playback or the range changes.
+    lastTs.current = null;
+    if (!playing) return;
     let raf = 0;
     const tick = (ms: number) => {
       const span = persistence.max - persistence.min || 1;
@@ -79,10 +86,6 @@ export default function Studio() {
     return () => cancelAnimationFrame(raf);
   }, [playing, speed, persistence.min, persistence.max]);
 
-  useEffect(() => {
-    setT(persistence.min + (persistence.max - persistence.min) * 0.5);
-    lastTs.current = null;
-  }, [persistence.min, persistence.max]);
 
   const handleUpload = async (file: File) => {
     try {
